@@ -13,6 +13,10 @@ pydantic = "^2.7.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
+pre-commit = "^3.7.1"
+black = "24.4.2"
+isort = "5.10.1"
+pycln = "2.4.0"
 
 [build-system]
 requires = ["poetry-core"]
