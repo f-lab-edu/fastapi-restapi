@@ -18,7 +18,7 @@ class Post(BaseModel):
     Created_At: Optional[datetime] = Field(default_factory=datetime.utcnow)
 
 
-in_memory = []
+in_memory = {}
 id_counter = 1
 
 
@@ -27,16 +27,16 @@ async def Create_post(post: Post):
     global id_counter, in_memory
     post.Id = id_counter
     post.Created_At = datetime.now()
+    in_memory[id_counter] = post.dict()
     id_counter += 1
-    in_memory.append(post)
     return post
 
 
 @app.get("/posts/{post_id}")  # 게시글 조회
 async def Get_post(post_id: int):  # int가 있고 없고의 차이가뭐지?
-    if post_id <= 0 or post_id > len(in_memory):
+    if post_id not in in_memory:
         return None
-    return in_memory[post_id - 1]
+    return in_memory[post_id]
 
 
 @app.get("/posts/")  # 게시글 조회
@@ -49,19 +49,24 @@ async def List_post():
 
 @app.patch("/posts/{post_id}")
 async def Update_post(post_id: int, update_post: Post):
-    index = post_id - 1
-    original = in_memory[index]
+    if post_id not in in_memory:
+        return None
 
-    if original.Author != update_post.Author:
+    original = in_memory[post_id]
+
+    if original["Author"] != update_post.Author:
         raise ValueError("작성자가 다릅니다.")
-    in_memory[index].Title = update_post.Title
-    in_memory[index].Content = update_post.Content
-    in_memory[index].Created_At = datetime.now()
+
+    original["Title"] = update_post.Title
+    original["Content"] = update_post.Content
+    original["Created_At"] = datetime.now()
 
 
 @app.delete("/posts/{post_id}")
 async def Delete_post(post_id: int):
-    in_memory.pop(post_id - 1)
+    if post_id not in in_memory:
+        return None
+    in_memory.pop(post_id)
     return in_memory
 
 
