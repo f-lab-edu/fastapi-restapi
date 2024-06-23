@@ -47,22 +47,22 @@ async def List_post():
 ############################################# 1-1
 
 
-# @app.patch("/posts/{post_id}")
-# async def Update_post(post_id: int, update_post: Post):
-#     index = post_id - 1
-#     original = in_memory[index]
-#
-#     if original.Author != update_post.Author:
-#         raise ValueError("작성자가 다릅니다.")
-#     in_memory[index].Title = update_post.Title
-#     in_memory[index].Content = update_post.Content
-#     in_memory[index].Created_At = datetime.now()
-#
-#
-# @app.delete("/posts/{post_id}")
-# async def Delete_post(post_id: int):
-#     in_memory.pop(post_id - 1)
-#     return in_memory
+@app.patch("/posts/{post_id}")
+async def Update_post(post_id: int, update_post: Post):
+    index = post_id - 1
+    original = in_memory[index]
+
+    if original.Author != update_post.Author:
+        raise ValueError("작성자가 다릅니다.")
+    in_memory[index].Title = update_post.Title
+    in_memory[index].Content = update_post.Content
+    in_memory[index].Created_At = datetime.now()
+
+
+@app.delete("/posts/{post_id}")
+async def Delete_post(post_id: int):
+    in_memory.pop(post_id - 1)
+    return in_memory
 
 
 ############################################# 1-2
