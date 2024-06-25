@@ -11,11 +11,14 @@ app = FastAPI()  # fastapi 인스턴스 생성 , uvicorn이 참조하고 있는 
 # async def read_root():
 #     return {"Hello": "World"}
 class Post(BaseModel):
-    Id: int
-    Author: str
-    Title: str
-    Content: str
-    Created_At: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    id: int
+    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+
+
+class User_post(BaseModel):  # 클래스의 분리
+    author: str
+    title: str
+    content: str
 
 
 in_memory = {}
@@ -23,7 +26,7 @@ id_counter = 1
 
 
 @app.post("/posts/")  # 게시글 생성
-async def Create_post(post: Post):
+async def Create_post(post: Post):  # 여기도 타입힌트
     global id_counter, in_memory
     post.Id = id_counter
     post.Created_At = datetime.now()
@@ -33,14 +36,14 @@ async def Create_post(post: Post):
 
 
 @app.get("/posts/{post_id}")  # 게시글 조회
-async def Get_post(post_id: int):  # int가 있고 없고의 차이가뭐지?
+async def Get_post(post_id: int):  # 타입힌트 , async 왜 쓰는지 / 모르면 그냥 빼라
     if post_id not in in_memory:
         return None
     return in_memory[post_id]
 
 
 @app.get("/posts/")  # 게시글 조회
-async def List_post():
+async def List_post():  # PEP 8 준수
     return in_memory
 
 
@@ -55,7 +58,7 @@ async def Update_post(post_id: int, update_post: Post):
     original = in_memory[post_id]
 
     if original["Author"] != update_post.Author:
-        raise ValueError("작성자가 다릅니다.")
+        raise ValueError("작성자가 다릅니다.")  # HTTP응답메소드로 변경
 
     original["Title"] = update_post.Title
     original["Content"] = update_post.Content
@@ -65,7 +68,7 @@ async def Update_post(post_id: int, update_post: Post):
 @app.delete("/posts/{post_id}")
 async def Delete_post(post_id: int):
     if post_id not in in_memory:
-        return None
+        return None  # 여기도 HTTP응답메소드
     in_memory.pop(post_id)
     return in_memory
 
