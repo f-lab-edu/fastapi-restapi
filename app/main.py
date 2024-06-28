@@ -57,19 +57,26 @@ def get_posts():
 ############################################# 1-1
 
 
-# @app.patch("/posts/{post_id}")
-# async def update_post(post_id: int, update_post: Post) -> Post:
-#     if post_id not in in_memory:
-#         raise HTTPException(status_code=404, detail="게시글이 없습니다..")
-#
-#     original = in_memory[post_id]
-#
-#     if original["Author"] != update_post.Author:
-#         raise ValueError("작성자가 다릅니다..")  # HTTP응답메소드로 변경
-#
-#     original.title = update_post.Title
-#     original.content = update_post.Content
-#     original.created_at = datetime.now()
+@app.patch("/posts/{post_id}")
+def update_post(post_id: int, update_post: RequestPost) -> ResponsePost:
+    if post_id not in in_memory:
+        raise HTTPException(status_code=404, detail="게시글이 없습니다..")
+
+    original = in_memory[post_id]
+
+    if original.author != update_post.author:
+        raise HTTPException(status_code=403, detail="작성자가 다릅니다..")
+
+    updated_post = ResponsePost(
+        id=post_id,
+        created_at=datetime.now(),
+        author=update_post.author,
+        title=update_post.title,
+        content=update_post.content,
+    )
+
+    in_memory[post_id] = updated_post
+    return updated_post
 
 
 # @app.delete("/posts/{post_id}")
