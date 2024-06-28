@@ -54,7 +54,7 @@ def get_posts():
     return list(in_memory.values())
 
 
-############################################# 1-1
+############################################# 1-1  0
 
 
 @app.patch("/posts/{post_id}")
@@ -79,12 +79,12 @@ def update_post(post_id: int, update_post: RequestPost) -> ResponsePost:
     return updated_post
 
 
-# @app.delete("/posts/{post_id}")
-# async def delete_post(post_id: int) -> dict[int, Post]:
-#     if post_id not in in_memory:
-#         raise HTTPException(status_code=404, detail="게시글이 없습니다..")
-#     in_memory.pop(post_id)
-#     return in_memory
+@app.delete("/posts/{post_id}")
+def delete_post(post_id: int) -> dict[int, ResponsePost]:
+    if post_id not in in_memory:
+        raise HTTPException(status_code=404, detail="게시글이 없습니다..")
+    in_memory.pop(post_id)
+    return in_memory
 
 
 ############################################# 1-2
