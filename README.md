@@ -4,7 +4,7 @@
 
 ***
 #### requirements ####
- <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=TypeScript&logoColor=white"/> 3.10.0
+python 3.10.0
 
 fastapi 0.0.4
 ***
