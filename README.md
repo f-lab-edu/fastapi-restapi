@@ -4,7 +4,7 @@
 
 ***
 #### requirements ####
-file:///C:/Users/sfdg4/Downloads/python.svg 3.10.0
+ <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=TypeScript&logoColor=white"/> 3.10.0
 
 fastapi 0.0.4
 ***
