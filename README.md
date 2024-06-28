@@ -4,7 +4,7 @@
 
 ***
 #### requirements ####
-(https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white) 3.10.0
+file:///C:/Users/sfdg4/Downloads/python.svg 3.10.0
 
 fastapi 0.0.4
 ***
