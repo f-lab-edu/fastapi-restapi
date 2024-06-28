@@ -9,13 +9,13 @@ app = FastAPI()  # fastapi 인스턴스 생성 , uvicorn이 참조하고 있는 
 # @app.get("/") #fastapi 에게 바로 아래에 있는 함수가 다음으로 이동하는 요청을 처리한다는 것을 알려줌, URL "/"에 대한 GET 작동을 사용하는 요청을 받을 때 마다 fastapi에 의해 호출
 # async def read_root():
 #     return {"Hello": "World"}
-class RequestPost(BaseModel):
+class RequestPost(BaseModel):  # 요청
     author: str
     title: str
     content: str
 
 
-class ResponsePost(BaseModel):  # 클래스의 분리
+class ResponsePost(BaseModel):  # 응답
     id: int
     created_at: datetime
     author: str
