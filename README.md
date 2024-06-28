@@ -28,12 +28,26 @@ window OS 를 사용하는 PC에 대한 install 방법입니다.
     (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
 ```
 
-#### poetry 설치 ####
+#### Poetry 프로젝트 초기화 ####
 ```
-    (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
+    poetry init --no-interaction
 ```
 
+#### FastAPI 및 Uvicorn 설치 ####
+```
+    poetry add fastapi uvicorn
+```
 
+### - 실행 ###
 
+#### Poetry 쉘 활성화 ####
+```
+    poetry shell
+```
+
+####  FastAPI 애플리케이션 실행 ####
+```
+    uvicorn main:app --reload
+```
 
 #### 설명 ####
