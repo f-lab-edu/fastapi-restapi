@@ -4,7 +4,8 @@
 
 ***
 #### requirements ####
-python 3.10.0
+[python](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=JavaScript&logoColor=white
+출처: https://hulrud.tistory.com/3 3.10.0
 
 fastapi 0.0.4
 ***
