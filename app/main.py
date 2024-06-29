@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel, Field
 
 app = FastAPI()  # fastapi 인스턴스 생성 , uvicorn이 참조하고 있는 것과 동일
@@ -44,9 +44,10 @@ def create_post(post: RequestPost) -> ResponsePost:
 
 @app.get("/posts/{post_id}")
 def get_post(id_counter: int) -> ResponsePost:
-    if id_counter in in_memory:
-        return in_memory[id_counter]
-    raise HTTPException(status_code=404, detail="게시글이 없습니다..")
+    if id_counter not in in_memory:
+        return status.HTTP_204_NO_CONTENT
+        # raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="게시글이 없습니다.")
+    return in_memory[id_counter]
 
 
 @app.get("/posts/")
@@ -60,31 +61,34 @@ def get_posts():
 @app.patch("/posts/{post_id}")
 def update_post(post_id: int, update_post: RequestPost) -> ResponsePost:
     if post_id not in in_memory:
-        raise HTTPException(status_code=404, detail="게시글이 없습니다..")
+        return status.HTTP_204_NO_CONTENT
+        # raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="게시글이 없습니다.")
 
     original = in_memory[post_id]
 
-    if original.author != update_post.author:
-        raise HTTPException(status_code=403, detail="작성자가 다릅니다..")
+    # PATCH 방식에서는 전송된 필드만 업데이트합니다.
+    if update_post.author != original.author:
+        return status.HTTP_403_FORBIDDEN
+        # raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="작성자가 다릅니다.")
 
-    updated_post = ResponsePost(
-        id=post_id,
-        created_at=datetime.now(),
-        author=update_post.author,
-        title=update_post.title,
-        content=update_post.content,
-    )
+    if update_post.title:
+        original.title = update_post.title
+    if update_post.content:
+        original.content = update_post.content
 
-    in_memory[post_id] = updated_post
-    return updated_post
+    # 업데이트된 시간
+    original.created_at = datetime.now()
+
+    return original
 
 
 @app.delete("/posts/{post_id}")
 def delete_post(post_id: int) -> dict[int, ResponsePost]:
     if post_id not in in_memory:
-        raise HTTPException(status_code=404, detail="게시글이 없습니다..")
+        return status.HTTP_204_NO_CONTENT
+        # raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="게시글이 없습니다.")
     in_memory.pop(post_id)
-    return in_memory
+    return status.HTTP_204_NO_CONTENT
 
 
 ############################################# 1-2
