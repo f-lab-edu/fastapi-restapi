@@ -27,7 +27,7 @@ in_memory = {}
 id_counter = 1
 
 
-@app.post("/posts/")  # 게시글 생성
+@app.post("/posts/", response_model=in_memory)  # 게시글 생성
 def create_post(post: RequestPost) -> ResponsePost:
     global id_counter
     new_post = ResponsePost(
@@ -42,27 +42,31 @@ def create_post(post: RequestPost) -> ResponsePost:
     return new_post
 
 
-@app.get("/posts/{post_id}")
-def get_post(id_counter: int) -> ResponsePost:
-    if id_counter not in in_memory:
-        return status.HTTP_204_NO_CONTENT
-        # raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="게시글이 없습니다.")
-    return in_memory[id_counter]
-
-
-@app.get("/posts/")
-def get_posts():
-    return list(in_memory.values())
-
-
-############################################# 1-1  0
-
-
-@app.patch("/posts/{post_id}")
-def update_post(post_id: int, update_post: RequestPost) -> ResponsePost:
+@app.get("/posts/{post_id}", response_model=in_memory)  # 없는거 보내면 500에러?
+def get_post(post_id: int):
     if post_id not in in_memory:
         return status.HTTP_204_NO_CONTENT
         # raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="게시글이 없습니다.")
+    return in_memory[post_id]
+
+
+@app.get("/posts/", response_model=in_memory)
+def get_posts():
+    return [post.dict() for post in in_memory.values()]
+
+
+############################################# 1-1
+
+
+@app.patch("/posts/{post_id}", response_model=in_memory)
+def update_post(post_id: int, update_post: RequestPost) -> ResponsePost:
+    if post_id not in in_memory:
+        # return status.HTTP_204_NO_CONTENT
+        # raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="게시글이 없습니다.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="게시글이 없습니다."
+        )
+    return in_memory[post_id]
 
     original = in_memory[post_id]
 
@@ -82,13 +86,13 @@ def update_post(post_id: int, update_post: RequestPost) -> ResponsePost:
     return original
 
 
-@app.delete("/posts/{post_id}")
+@app.delete("/posts/{post_id}", response_model={})
 def delete_post(post_id: int) -> dict[int, ResponsePost]:
     if post_id not in in_memory:
         return status.HTTP_204_NO_CONTENT
         # raise HTTPException(status_code=status.HTTP_204_NO_CONTENT, detail="게시글이 없습니다.")
     in_memory.pop(post_id)
-    return status.HTTP_204_NO_CONTENT
+    return status.HTTP_200_OK
 
 
 ############################################# 1-2
