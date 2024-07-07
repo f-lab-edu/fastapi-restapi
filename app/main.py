@@ -96,68 +96,81 @@
 #
 #
 # ############################################# 1-2
-from typing import List
+# from typing import List
+#
+# from fastapi import Depends, FastAPI, HTTPException, Response, status
+# from sqlalchemy.orm import Session
+#
+# from . import crud
+# from .domain.schemas import schemas
+# from .domain.models import models
+# from .database import SessionLocal, engine
+#
+# models.Base.metadata.create_all(bind=engine)
+#
+# app = FastAPI()
+#
+#
+# def get_db():
+#     db = SessionLocal()
+#     try:
+#         yield db
+#     finally:
+#         db.close()
+#
+#
+# @app.post("/posts/", response_model=schemas.PostRead)
+# def create_post(post: schemas.PostCreate, db: Session = Depends(get_db)):
+#     return crud.create_post(db=db, post_create=post)
+#
+#
+# @app.get("/posts/{post_id}", response_model=schemas.PostRead)
+# def read_post(post_id: int, db: Session = Depends(get_db)):
+#     db_post = crud.get_post(db=db, post_id=post_id)
+#     if db_post is None:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND, detail="게시글이 없습니다.."
+#         )
+#     return db_post
+#
+#
+# @app.get("/posts/", response_model=List[schemas.PostRead])
+# def read_posts(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+#     posts = crud.get_posts(db=db, skip=skip, limit=limit)
+#     return posts
+#
+#
+# @app.patch("/posts/{post_id}", response_model=schemas.PostRead)
+# def update_post(post_id: int, post: schemas.PostUpdate, db: Session = Depends(get_db)):
+#     db_post = crud.get_post(db=db, post_id=post_id)
+#     if db_post is None:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND, detail="게시글이 없습니다.."
+#         )
+#     try:
+#         updated_post = crud.update_post(db=db, post_id=post_id, post_update=post)
+#     except ValueError as e:
+#         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+#     return updated_post
+#
+#
+# @app.delete("/posts/{post_id}", response_model=schemas.PostRead)
+# def delete_post(post_id: int, db: Session = Depends(get_db)):
+#     db_post = crud.get_post(db=db, post_id=post_id)
+#     if db_post is None:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND, detail="게시글이 없습니다.."
+#         )
+#     crud.delete_post(db=db, post_id=post_id)
+#     return Response(status_code=status.HTTP_200_OK)
+########################################################## 1-4
+from fastapi import FastAPI
 
-from fastapi import Depends, FastAPI, HTTPException, Response, status
-from sqlalchemy.orm import Session
-
-from . import crud, models, schemas
-from .database import SessionLocal, engine
-
-models.Base.metadata.create_all(bind=engine)
+from app.api import endpoints
+from app.database import Base, engine
 
 app = FastAPI()
 
+Base.metadata.create_all(bind=engine)
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-@app.post("/posts/", response_model=schemas.PostRead)
-def create_post(post: schemas.PostCreate, db: Session = Depends(get_db)):
-    return crud.create_post(db=db, post_create=post)
-
-
-@app.get("/posts/{post_id}", response_model=schemas.PostRead)
-def read_post(post_id: int, db: Session = Depends(get_db)):
-    db_post = crud.get_post(db=db, post_id=post_id)
-    if db_post is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="게시글이 없습니다.."
-        )
-    return db_post
-
-
-@app.get("/posts/", response_model=List[schemas.PostRead])
-def read_posts(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    posts = crud.get_posts(db=db, skip=skip, limit=limit)
-    return posts
-
-
-@app.patch("/posts/{post_id}", response_model=schemas.PostRead)
-def update_post(post_id: int, post: schemas.PostUpdate, db: Session = Depends(get_db)):
-    db_post = crud.get_post(db=db, post_id=post_id)
-    if db_post is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="게시글이 없습니다.."
-        )
-    try:
-        updated_post = crud.update_post(db=db, post_id=post_id, post_update=post)
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
-    return updated_post
-
-
-@app.delete("/posts/{post_id}", response_model=schemas.PostRead)
-def delete_post(post_id: int, db: Session = Depends(get_db)):
-    db_post = crud.get_post(db=db, post_id=post_id)
-    if db_post is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="게시글이 없습니다.."
-        )
-    crud.delete_post(db=db, post_id=post_id)
-    return Response(status_code=status.HTTP_200_OK)
+app.include_router(endpoints.router, prefix="/api", tags=["posts"])
