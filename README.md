@@ -64,6 +64,7 @@ JSON 형식의 데이터를 파싱하여 RequestPost 모델로 변환합니다.
 게시글은 딕셔너리에 저장되며 키는 id_counter, 값은 ResponsePost 객체입니다.
 
 #### 계층도 ####
+```mermaid
 graph TD;
     api-->service;
     service-->domain;
