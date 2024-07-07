@@ -63,7 +63,11 @@ RequestPost 모델 타입의 post 매개변수를 입력으로 받고
 JSON 형식의 데이터를 파싱하여 RequestPost 모델로 변환합니다.
 게시글은 딕셔너리에 저장되며 키는 id_counter, 값은 ResponsePost 객체입니다.
 
-
+#### 계층도 ####
+graph TD;
+    api-->service;
+    service-->domain;
+    domain-->DB;
 * * *
 ![post](https://github.com/f-lab-edu/fastapi-restapi/assets/74363678/44da76a1-a408-4b1c-ba89-eddd8bfeedd7)
 * * *
