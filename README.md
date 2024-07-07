@@ -69,6 +69,8 @@ graph TD;
     api-->service;
     service-->domain;
     domain-->DB;
+```
+
 * * *
 ![post](https://github.com/f-lab-edu/fastapi-restapi/assets/74363678/44da76a1-a408-4b1c-ba89-eddd8bfeedd7)
 * * *
