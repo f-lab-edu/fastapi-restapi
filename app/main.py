@@ -173,4 +173,4 @@ app = FastAPI()
 
 Base.metadata.create_all(bind=engine)
 
-app.include_router(endpoints.router, prefix="/api", tags=["posts"])
+app.include_router(endpoints.router, prefix="/api", tags=["posts", "users", "comments"])
