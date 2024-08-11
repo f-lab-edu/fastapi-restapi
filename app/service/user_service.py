@@ -1,66 +1,44 @@
-from typing import List, Optional
+from typing import List
 
-from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.auth.utils import get_password_hash, verify_password
-from app.domain.models.user import Role, User
-from app.domain.schemas.user import UserCreate, UserInDB, UserRead, UserUpdate
+from app.domain.models.models import Post
+from app.domain.schemas.schemas import PostCreate, PostRead, PostUpdate
 
 
-class UserService:
+class PostService:
     def __init__(self, db: Session):
         self.db = db
 
-    def create(self, user_create: UserCreate) -> UserRead:
-        user = User(
-            nickname=user_create.nickname,
-            hashed_password=user_create.password,
-            role=user_create.role,
-        )
-        self.db.add(user)
+    def create_post(self, post_create: PostCreate) -> PostRead:
+        post = Post(**post_create.dict())
+        self.db.add(post)
         self.db.commit()
-        self.db.refresh(user)
-        return UserRead.from_orm(user)
+        self.db.refresh(post)
+        return PostRead.from_orm(post)
 
-    def authenticate_user(self, nickname: str, password: str) -> Optional[UserInDB]:
-        user = self.db.query(User).filter(User.nickname == nickname).first()
-        if not user or not verify_password(password, user.hashed_password):
-            return None
-        return UserInDB.from_orm(user)
-
-    def get(self, user_id: int) -> Optional[UserInDB]:
-        user = self.db.query(User).filter(User.id == user_id).first()
-        if user:
-            return UserInDB.from_orm(user)
+    def get_post(self, post_id: int) -> PostRead:
+        post = self.db.query(Post).filter(Post.id == post_id).first()
+        if post:
+            return PostRead.from_orm(post)
         return None
 
-    def get_by_nickname(self, nickname: str) -> Optional[UserInDB]:
-        user = self.db.query(User).filter(User.nickname == nickname).first()
-        if user:
-            return UserInDB.from_orm(user)
-        return None
+    def get_posts(self, skip: int = 0, limit: int = 10) -> List[PostRead]:
+        posts = self.db.query(Post).offset(skip).limit(limit).all()
+        return [PostRead.from_orm(post) for post in posts]
 
-    def get_multi(self, skip: int = 0, limit: int = 10) -> List[UserRead]:
-        users = self.db.query(User).offset(skip).limit(limit).all()
-        return [UserRead.from_orm(user) for user in users]
-
-    def update(self, user_id: int, user_update: UserUpdate) -> UserRead:
-        user = self.db.query(User).filter(User.id == user_id).first()
-        if not user:
-            raise ValueError("유저가 없습니다.")
-        if user_update.password:
-            user.hashed_password = get_password_hash(user_update.password)
-        for key, value in user_update.dict(exclude_unset=True).items():
-            setattr(user, key, value)
+    def update_post(self, post_id: int, post_update: PostUpdate) -> PostRead:
+        post = self.db.query(Post).filter(Post.id == post_id).first()
+        if not post:
+            raise ValueError("게시글이 없습니다.")
+        for key, value in post_update.dict(exclude_unset=True).items():
+            setattr(post, key, value)
         self.db.commit()
-        self.db.refresh(user)
-        return UserRead.from_orm(user)
+        self.db.refresh(post)
+        return PostRead.from_orm(post)
 
-    def delete(self, user_id: int):
-        user = self.db.query(User).filter(User.id == user_id).first()
-        if user:
-            self.db.delete(user)
+    def delete_post(self, post_id: int):
+        post = self.db.query(Post).filter(Post.id == post_id).first()
+        if post:
+            self.db.delete(post)
             self.db.commit()
-        else:
-            raise ValueError("유저가 없습니다.")
