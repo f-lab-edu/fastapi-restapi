@@ -3,21 +3,33 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
+from app.auth.dependencies import get_current_user
+from app.auth.utils import get_password_hash
 from app.database import get_db
-from app.domain.schemas.schemas import PostCreate, PostRead, PostUpdate
-from app.service.user_service import PostService
+from app.domain.schemas.comment import CommentCreate, CommentRead, CommentUpdate
+from app.domain.schemas.post import PostCreate, PostRead, PostUpdate
+from app.domain.schemas.user import UserCreate, UserInDB, UserRead, UserUpdate
+from app.service.comment_service import CommentService
+from app.service.post_service import PostService
+from app.service.user_service import UserService
 
 router = APIRouter()
 
 
+# Post Endpoints
 @router.post("/posts/", response_model=PostRead)
-def create_post(post: PostCreate, db: Session = Depends(get_db)):
-    return PostService(db).create_post(post)
+def create_post(
+    post: PostCreate,
+    db: Session = Depends(get_db),
+    current_user: UserInDB = Depends(get_current_user),
+):
+    post_service = PostService(db)
+    return post_service.create(post, author_id=current_user.id)
 
 
 @router.get("/posts/{post_id}", response_model=PostRead)
 def read_post(post_id: int, db: Session = Depends(get_db)):
-    post = PostService(db).get_post(post_id)
+    post = PostService(db).get(post_id)
     if post is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="게시글이 없습니다."
@@ -27,30 +39,142 @@ def read_post(post_id: int, db: Session = Depends(get_db)):
 
 @router.get("/posts/", response_model=List[PostRead])
 def read_posts(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    return PostService(db).get_posts(skip=skip, limit=limit)
+    return PostService(db).get_multi(skip=skip, limit=limit)
 
 
 @router.patch("/posts/{post_id}", response_model=PostRead)
-def update_post(post_id: int, post: PostUpdate, db: Session = Depends(get_db)):
-    service = PostService(db)
-    db_post = service.get_post(post_id)
-    if db_post is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="게시글이 없습니다."
-        )
+def update_post(
+    post_id: int,
+    post: PostUpdate,
+    db: Session = Depends(get_db),
+    current_user: UserRead = Depends(get_current_user),
+):
     try:
-        return service.update_post(post_id, post)
+        return PostService(db).update(post_id, post)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.delete("/posts/{post_id}", response_model=PostRead)
-def delete_post(post_id: int, db: Session = Depends(get_db)):
-    service = PostService(db)
-    db_post = service.get_post(post_id)
-    if db_post is None:
+def delete_post(
+    post_id: int,
+    db: Session = Depends(get_db),
+    current_user: UserRead = Depends(get_current_user),
+):
+    try:
+        PostService(db).delete(post_id)
+        return Response(status_code=status.HTTP_200_OK)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.get("/users/{user_id}/posts", response_model=List[PostRead])
+def read_posts_by_user(
+    user_id: int, skip: int = 0, limit: int = 10, db: Session = Depends(get_db)
+):
+    return PostService(db).get_by_author(user_id, skip=skip, limit=limit)
+
+
+# User Endpoints
+@router.post("/users/", response_model=UserRead)
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    user.password = get_password_hash(user.password)
+    return UserService(db).create(user)
+
+
+@router.get("/users/{user_id}", response_model=UserRead)
+def read_user(user_id: int, db: Session = Depends(get_db)):
+    user = UserService(db).get(user_id)
+    if user is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="게시글이 없습니다."
+            status_code=status.HTTP_404_NOT_FOUND, detail="유저가 없습니다."
         )
-    service.delete_post(post_id)
-    return Response(status_code=status.HTTP_200_OK)
+    return user
+
+
+@router.patch("/users/{user_id}", response_model=UserRead)
+def update_user(
+    user_id: int,
+    user: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: UserRead = Depends(get_current_user),
+):
+    if user.password:
+        user.password = get_password_hash(user.password)
+    try:
+        return UserService(db).update(user_id, user)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.delete("/users/{user_id}", response_model=UserRead)
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: UserRead = Depends(get_current_user),
+):
+    try:
+        UserService(db).delete(user_id)
+        return Response(status_code=status.HTTP_200_OK)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.get("/users/{user_id}/comments", response_model=List[CommentRead])
+def read_comments_by_user(
+    user_id: int, skip: int = 0, limit: int = 10, db: Session = Depends(get_db)
+):
+    return UserService(db).get_comments_by_user(user_id, skip=skip, limit=limit)
+
+
+# Comment Endpoints
+@router.post("/comments/", response_model=CommentRead)
+def create_comment(
+    comment: CommentCreate,
+    db: Session = Depends(get_db),
+    current_user: UserRead = Depends(get_current_user),
+):
+    return CommentService(db).create(comment)
+
+
+@router.get("/comments/{comment_id}", response_model=CommentRead)
+def read_comment(comment_id: int, db: Session = Depends(get_db)):
+    comment = CommentService(db).get(comment_id)
+    if comment is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="댓글이 없습니다."
+        )
+    return comment
+
+
+@router.patch("/comments/{comment_id}", response_model=CommentRead)
+def update_comment(
+    comment_id: int,
+    comment: CommentUpdate,
+    db: Session = Depends(get_db),
+    current_user: UserRead = Depends(get_current_user),
+):
+    try:
+        return CommentService(db).update(comment_id, comment)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.delete("/comments/{comment_id}", response_model=CommentRead)
+def delete_comment(
+    comment_id: int,
+    db: Session = Depends(get_db),
+    current_user: UserRead = Depends(get_current_user),
+):
+    try:
+        CommentService(db).delete(comment_id)
+        return Response(status_code=status.HTTP_200_OK)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.get("/posts/{post_id}/comments", response_model=List[CommentRead])
+def read_comments_by_post(
+    post_id: int, skip: int = 0, limit: int = 10, db: Session = Depends(get_db)
+):
+    return CommentService(db).get_by_post(post_id, skip=skip, limit=limit)

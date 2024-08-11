@@ -41,3 +41,8 @@ coverage.xml
 .idea/
 *.sublime-project
 *.sublime-workspace
+
+
+# 무시할 파일들
+app.db
+test.db
