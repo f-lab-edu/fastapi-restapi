@@ -1,16 +1,19 @@
-from sqlalchemy import Column, DateTime, Integer, String, Text
-from sqlalchemy.sql import func
+# app/domain/models/post.py
+from datetime import datetime
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
 
 from app.database import Base
+from app.domain.models.user import User
 
 
 class Post(Base):
     __tablename__ = "posts"
-
     id = Column(Integer, primary_key=True, index=True)
-    author = Column(String, index=True)  # UNIQUE 제약 조건 제거
+    author_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     title = Column(String, index=True)
-    content = Column(Text)
-    created_at = Column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    content = Column(Text, index=True)
+    author = relationship("User")
+    created_at = Column(DateTime, default=datetime.utcnow)
