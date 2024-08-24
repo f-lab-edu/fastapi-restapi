@@ -14,8 +14,9 @@ class UserService:
 
     def create(self, user_create: UserCreate) -> UserRead:
         user = User(
+            userid=user_create.userid,
             nickname=user_create.nickname,
-            hashed_password=user_create.password,
+            hashed_password=get_password_hash(user_create.password),
             role=user_create.role,
         )
         self.db.add(user)
@@ -31,6 +32,12 @@ class UserService:
 
     def get(self, user_id: int) -> Optional[UserInDB]:
         user = self.db.query(User).filter(User.id == user_id).first()
+        if user:
+            return UserInDB.from_orm(user)
+        return None
+
+    def get_by_userid(self, userid: str) -> Optional[UserInDB]:
+        user = self.db.query(User).filter(User.userid == userid).first()
         if user:
             return UserInDB.from_orm(user)
         return None
@@ -59,6 +66,14 @@ class UserService:
 
     def delete(self, user_id: int):
         user = self.db.query(User).filter(User.id == user_id).first()
+        if user:
+            self.db.delete(user)
+            self.db.commit()
+        else:
+            raise ValueError("유저가 없습니다.")
+
+    def delete_by_userid(self, userid: str):
+        user = self.db.query(User).filter(User.userid == userid).first()
         if user:
             self.db.delete(user)
             self.db.commit()
