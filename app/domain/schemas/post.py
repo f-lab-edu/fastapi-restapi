@@ -15,9 +15,11 @@ class PostCreate(PostBase):
     pass
 
 
-class PostRead(PostBase):
+class PostRead(BaseModel):
     id: int
-    author: UserRead
+    title: str
+    content: str
+    author: Optional[UserRead]  # author 필드를 Optional로 설정
     created_at: datetime
 
     class Config:

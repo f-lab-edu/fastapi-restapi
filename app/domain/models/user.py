@@ -18,7 +18,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     userid = Column(String(50), unique=True, index=True, nullable=False)
     nickname = Column(String(50), unique=True, index=True, nullable=False)
-    hashed_password = Column(String(255), nullable=False)
+    hashed_password = Column(String)
     role = Column(Enum(Role), default=Role.MEMBER, nullable=False)
     created_at = Column(
         DateTime, default=func.now(), nullable=False, server_default=func.now()
