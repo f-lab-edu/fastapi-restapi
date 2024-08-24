@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -12,6 +12,7 @@ from app.domain.schemas.user import UserCreate, UserInDB, UserRead, UserUpdate
 from app.service.comment_service import CommentService
 from app.service.post_service import PostService
 from app.service.user_service import UserService
+from app.session import session_store
 
 router = APIRouter()
 
@@ -178,3 +179,16 @@ def read_comments_by_post(
     post_id: int, skip: int = 0, limit: int = 10, db: Session = Depends(get_db)
 ):
     return CommentService(db).get_by_post(post_id, skip=skip, limit=limit)
+
+
+@router.get("/profile")
+def get_user_profile(session_id: str = Cookie(None)):
+    session_data = session_store.get_session(session_id)
+
+    if not session_data:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="세션을 찾을 수 없거나 만료",
+        )
+
+    return {"user": session_data["username"]}

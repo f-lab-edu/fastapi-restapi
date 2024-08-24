@@ -1,3 +1,4 @@
+import logging
 import os
 from datetime import datetime, timedelta
 from typing import Optional
@@ -20,6 +21,7 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: Optional[str] = None
+    roles: Optional[list[str]] = None  # 추가 가능
 
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
@@ -37,8 +39,10 @@ def decode_access_token(token: str) -> Optional[TokenData]:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
+        roles: list[str] = payload.get("roles", [])
         if username is None:
             return None
-        return TokenData(username=username)
-    except JWTError:
+        return TokenData(username=username, roles=roles)
+    except JWTError as e:
+        logging.error(f"Token decode error: {e}")
         return None
