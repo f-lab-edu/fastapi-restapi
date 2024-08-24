@@ -7,8 +7,7 @@ from app.auth.dependencies import get_current_user
 from app.auth.utils import get_password_hash
 from app.database import get_db
 from app.domain.models.user import Role
-from app.domain.schemas.comment import (CommentCreate, CommentRead,
-                                        CommentUpdate)
+from app.domain.schemas.comment import CommentCreate, CommentRead, CommentUpdate
 from app.domain.schemas.post import PostCreate, PostRead, PostUpdate
 from app.domain.schemas.user import UserCreate, UserInDB, UserRead, UserUpdate
 from app.service.comment_service import CommentService

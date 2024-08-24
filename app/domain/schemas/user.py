@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, validator
+from pydantic import UUID4, BaseModel, validator
 
 
 class Role(str, enum.Enum):
@@ -11,11 +11,12 @@ class Role(str, enum.Enum):
 
 
 class UserBase(BaseModel):
-    nickname: str
     role: Role
 
 
 class UserCreate(UserBase):
+    userid: str
+    nickname: str
     password: str
 
     @staticmethod
