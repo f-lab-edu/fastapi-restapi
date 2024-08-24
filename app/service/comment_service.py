@@ -3,7 +3,8 @@ from typing import List
 from sqlalchemy.orm import Session
 
 from app.domain.models.comment import Comment
-from app.domain.schemas.comment import CommentCreate, CommentRead, CommentUpdate
+from app.domain.schemas.comment import (CommentCreate, CommentRead,
+                                        CommentUpdate)
 
 
 class CommentService:
