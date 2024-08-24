@@ -14,23 +14,21 @@ class UserBase(BaseModel):
     nickname: str
     role: Role
 
-    @validator("nickname")
-    def validate_nickname(cls, v):
-        if len(v) < 3:
-            raise ValueError("닉네임은 3자 이상이어야 합니다.")
-        return v
-
 
 class UserCreate(UserBase):
     password: str
 
-    @validator("password")
-    def validate_password(cls, v):
-        if len(v) < 8:
+    @staticmethod
+    def validate_password_strength(password: str) -> str:
+        if len(password) < 8:
             raise ValueError("비밀번호는 8자 이상이어야 합니다.")
-        if not any(char.isupper() for char in v):
+        if not any(char.isupper() for char in password):
             raise ValueError("비밀번호에는 대문자가 하나 이상 포함되어야 합니다.")
-        return v
+        return password
+
+    _validate_password = validator("password", allow_reuse=True)(
+        validate_password_strength
+    )
 
 
 class UserRead(UserBase):
@@ -46,15 +44,17 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
     role: Optional[Role] = None
 
-    @validator("password", always=True, pre=True)
-    def validate_password(cls, v):
-        if v is None:
-            return v
-        if len(v) < 8:
+    @staticmethod
+    def validate_password_strength(password: str) -> str:
+        if len(password) < 8:
             raise ValueError("비밀번호는 8자 이상이어야 합니다.")
-        if not any(char.isupper() for char in v):
+        if not any(char.isupper() for char in password):
             raise ValueError("비밀번호에는 대문자가 하나 이상 포함되어야 합니다.")
-        return v
+        return password
+
+    _validate_password = validator("password", pre=True, allow_reuse=True)(
+        validate_password_strength
+    )
 
     class Config:
         from_attributes = True
