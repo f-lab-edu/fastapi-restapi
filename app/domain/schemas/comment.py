@@ -5,7 +5,6 @@ from pydantic import BaseModel
 
 
 class CommentBase(BaseModel):
-    author_id: int
     post_id: int
     content: str
 
@@ -16,7 +15,7 @@ class CommentCreate(CommentBase):
 
 class CommentRead(BaseModel):
     id: int
-    author_id: int
+    author_id: str
     post_id: int
     content: str
     created_at: datetime

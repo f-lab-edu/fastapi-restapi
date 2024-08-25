@@ -11,7 +11,7 @@ class PostService:
     def __init__(self, db: Session):
         self.db = db
 
-    def create(self, post_create: PostCreate, author_id: int) -> Post:
+    def create(self, post_create: PostCreate, author_id: str) -> Post:
         post = Post(
             author_id=author_id,
             title=post_create.title,

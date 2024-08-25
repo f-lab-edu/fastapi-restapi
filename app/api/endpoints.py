@@ -23,7 +23,7 @@ router = APIRouter()
 
 # 권한 체크 함수: 요청자가 본인인지 또는 관리자 권한을 가지고 있는지 확인
 def is_owner_or_admin(current_user: UserInDB, owner_id: int) -> bool:
-    return current_user.id == owner_id or current_user.role == Role.ADMIN
+    return current_user.userid == owner_id or current_user.role == Role.ADMIN
 
 
 # Post Endpoints
@@ -56,7 +56,7 @@ def create_post(
     try:
         # PostService를 사용하여 새로운 게시글 작성
         post_service = PostService(db)
-        new_post = post_service.create(post, author_id=current_user.id)
+        new_post = post_service.create(post_create=post, author_id=current_user.userid)
 
         # 데이터베이스 커밋
         db.commit()
@@ -96,10 +96,16 @@ def update_post(
 ):
     post_service = PostService(db)
     post_in_db = post_service.get(post_id)
+
     if post_in_db is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="게시글이 없습니다."
         )
+
+    # 디버깅을 위해 작성자와 현재 유저 정보 출력
+    print(
+        f"current_user.id: {current_user.userid}, post_in_db.author_id: {post_in_db.author_id}"
+    )
 
     if not is_owner_or_admin(current_user, post_in_db.author_id):
         raise HTTPException(
@@ -237,7 +243,7 @@ def create_comment(
     try:
         comment_service = CommentService(db)
         # current_user의 id를 author_id로 사용
-        new_comment = comment_service.create(comment, author_id=current_user.id)
+        new_comment = comment_service.create(comment, author_id=current_user.userid)
         db.commit()
         return new_comment
     except Exception as e:

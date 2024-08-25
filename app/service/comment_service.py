@@ -1,17 +1,17 @@
+from typing import List
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.domain.models.comment import Comment
-from app.domain.schemas.comment import (CommentCreate, CommentRead,
-                                        CommentUpdate)
+from app.domain.schemas.comment import CommentCreate, CommentRead, CommentUpdate
 
 
 class CommentService:
     def __init__(self, db: Session):
         self.db = db
 
-    def create(self, comment_create: CommentCreate, author_id: int) -> Comment:
+    def create(self, comment_create: CommentCreate, author_id: str) -> Comment:
         comment = Comment(
             author_id=author_id,
             post_id=comment_create.post_id,
@@ -44,3 +44,14 @@ class CommentService:
                 status_code=status.HTTP_404_NOT_FOUND, detail="댓글이 없습니다."
             )
         return comment
+
+    def get_by_post(
+        self, post_id: int, skip: int = 0, limit: int = 10
+    ) -> List[Comment]:
+        return (
+            self.db.query(Comment)
+            .filter(Comment.post_id == post_id)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
