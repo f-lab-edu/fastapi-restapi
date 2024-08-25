@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, validator
+from pydantic import UUID4, BaseModel, validator
 
 
 class Role(str, enum.Enum):
@@ -11,31 +11,30 @@ class Role(str, enum.Enum):
 
 
 class UserBase(BaseModel):
-    nickname: str
     role: Role
-
-    @validator("nickname")
-    def validate_nickname(cls, v):
-        if len(v) < 3:
-            raise ValueError("닉네임은 3자 이상이어야 합니다.")
-        return v
+    userid: str
+    nickname: str
 
 
 class UserCreate(UserBase):
+    userid: str
+    nickname: str
     password: str
 
     @validator("password")
-    def validate_password(cls, v):
-        if len(v) < 8:
+    def validate_password_strength(cls, password: str) -> str:
+        if len(password) < 8:
             raise ValueError("비밀번호는 8자 이상이어야 합니다.")
-        if not any(char.isupper() for char in v):
+        if not any(char.isupper() for char in password):
             raise ValueError("비밀번호에는 대문자가 하나 이상 포함되어야 합니다.")
-        return v
+        return password
 
 
 class UserRead(UserBase):
     id: int
     created_at: datetime
+    userid: str
+    nickname: str
 
     class Config:
         from_attributes = True
@@ -46,15 +45,13 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
     role: Optional[Role] = None
 
-    @validator("password", always=True, pre=True)
-    def validate_password(cls, v):
-        if v is None:
-            return v
-        if len(v) < 8:
+    @validator("password")
+    def validate_password_strength(cls, password: str) -> str:
+        if len(password) < 8:
             raise ValueError("비밀번호는 8자 이상이어야 합니다.")
-        if not any(char.isupper() for char in v):
+        if not any(char.isupper() for char in password):
             raise ValueError("비밀번호에는 대문자가 하나 이상 포함되어야 합니다.")
-        return v
+        return password
 
     class Config:
         from_attributes = True

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -6,7 +7,6 @@ from app.domain.schemas.user import UserRead
 
 
 class PostBase(BaseModel):
-    author: str
     title: str
     content: str
 
@@ -15,9 +15,11 @@ class PostCreate(PostBase):
     pass
 
 
-class PostRead(PostBase):
+class PostRead(BaseModel):
     id: int
-    author: UserRead
+    title: str
+    content: str
+    author: Optional[UserRead]  # author 필드를 Optional로 설정
     created_at: datetime
 
     class Config:
@@ -25,6 +27,5 @@ class PostRead(PostBase):
 
 
 class PostUpdate(BaseModel):
-    author: str = None
-    title: str = None
-    content: str = None
+    title: Optional[str] = None
+    content: Optional[str] = None
