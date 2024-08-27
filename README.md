@@ -32,11 +32,9 @@ uvicorn main:app --reload
 유저 정보에 대한 수정 및 삭제 또한 유저 본인이거나 관리자만 가능합니다.
 
 ### hierarchy
-```memaid
 flowchart TD
     A[API] --> B[Service]
     B[Service] --> c[Domain]
-```
 
 ### screen shot
 
