@@ -5,15 +5,26 @@
 ***
 ### requirements 
 python <= 3.10.0
-poetry <= 
+
+poetry <= 0.1.0
 ***
  
-### install 
+### execution
+```bash
+poetry shell
+```
 
-### 설명
+```bash
+uvicorn main:app --reload
+```
 
-### 계층도
+```bash
+127.0.0.1:8000/docs
+```
+### explanation
 
-### 스크린샷
+### hierarchy
+
+### screen shot
 
 
