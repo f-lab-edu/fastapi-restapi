@@ -33,10 +33,8 @@ uvicorn main:app --reload
 
 ### hierarchy
 flowchart TD
-  A[API] --> B[Service]
-  B[Service] --> C[Domain]
-flowchart LR
-    Start --> Stop
+  A[API] --> B[Service];
+  B[Service] --> C[Domain];
 ### screen shot
 
 
