@@ -53,3 +53,4 @@ mysql_data/*.sock
 
 # Ignore entire MySQL data directory
 mysql_data/
+htmlcov
