@@ -19,6 +19,10 @@ COPY pyproject.toml poetry.lock /app/
 # 프로젝트 의존성 설치
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi
 
+RUN pip install cryptography
+
+RUN pip install bcrypt==3.2.0
+
 # 애플리케이션 소스 코드를 복사
 COPY . /app
 

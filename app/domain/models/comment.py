@@ -12,7 +12,7 @@ class Comment(Base):
     __tablename__ = "comments"
 
     id = Column(Integer, primary_key=True, index=True)
-    author_id = Column(String, ForeignKey("users.userid"), nullable=False)
+    author_id = Column(String(255), ForeignKey("users.userid"), nullable=False)
     post_id = Column(
         Integer, ForeignKey("posts.id", ondelete="CASCADE"), nullable=False
     )
