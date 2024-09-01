@@ -13,14 +13,11 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 # 환경 변수 설정 (Poetry가 PATH에 추가되도록)
 ENV PATH="/root/.local/bin:$PATH"
 
-# # 프로젝트의 의존성 파일을 복사
-# COPY pyproject.toml poetry.lock /app/
-#
-# # 프로젝트 의존성 설치
-# RUN poetry config virtualenvs.create false && poetry install --only main --no-interaction --no-ansi
+# 프로젝트의 의존성 파일을 복사
+COPY pyproject.toml poetry.lock /app/
 
-COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+# 프로젝트 의존성 설치
+RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi
 
 # 애플리케이션 소스 코드를 복사
 COPY . /app
