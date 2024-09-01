@@ -11,7 +11,7 @@ fastapi = "^0.111.0"
 uvicorn = {extras = ["standard"], version = "^0.30.1"}
 pydantic = "^2.7.4"
 sqlalchemy = "^2.0.31"
-
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
@@ -20,7 +20,7 @@ black = "24.4.2"
 isort = "5.10.1"
 pycln = "2.4.0"
 python-jose = "^3.3.0"
-passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+
 
 [build-system]
 requires = ["poetry-core"]
