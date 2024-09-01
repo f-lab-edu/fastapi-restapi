@@ -26,7 +26,6 @@ def is_owner_or_admin(current_user: UserInDB, owner_id: int) -> bool:
     return current_user.userid == owner_id or current_user.role == Role.ADMIN
 
 
-# Post Endpoints
 @router.post("/users/", response_model=UserRead)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     try:
@@ -54,16 +53,11 @@ def create_post(
     current_user: UserInDB = Depends(get_current_user),
 ):
     try:
-        # PostService를 사용하여 새로운 게시글 작성
         post_service = PostService(db)
         new_post = post_service.create(post_create=post, author_id=current_user.userid)
-
-        # 데이터베이스 커밋
         db.commit()
-
         return new_post
     except Exception as e:
-        # 에러 발생 시 롤백 및 에러 메시지 반환
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -101,8 +95,6 @@ def update_post(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="게시글이 없습니다."
         )
-
-    # 디버깅을 위해 작성자와 현재 유저 정보 출력
     print(
         f"current_user.id: {current_user.userid}, post_in_db.author_id: {post_in_db.author_id}"
     )
@@ -364,7 +356,7 @@ def login_for_session(
         "hashed_password": user.hashed_password,
         "role": user.role,
         "id": user.id,
-        "created_at": str(user.created_at),  # datetime을 문자열로 저장
+        "created_at": str(user.created_at),
     }
 
     # 세션 생성 (1일 만료)
