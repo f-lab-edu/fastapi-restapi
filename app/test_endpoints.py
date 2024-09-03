@@ -8,16 +8,23 @@ from app.domain.schemas.post import PostCreate, PostUpdate
 
 
 # User 엔드포인트 테스트
-def test_create_user_success(client):
+def test_create_user_success(client, db_session):
+    # TODO: 아래 given when then으로 모두 표현하기 (검색해보기)
+    # TODO: 테스트 코드에도 타입 힌팅 추가
+    # given
     user_data = {
         "username": "testuser2",
         "password": "testpassword2",
         "nickname": "tester2",
     }
+
+    # when
     response = client.post("/users/", json=user_data)
+
+    # then
+    # TODO: assert로 누락된 검증할 부분 추가하기 (API 리스폰스 바디, DB에 생성된 엔티티 확인)
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["username"] == "testuser2"
-
 
 def test_create_user_failure(client):
     user_data = {"username": "testuser"}  # password 미포함
