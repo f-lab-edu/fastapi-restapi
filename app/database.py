@@ -35,20 +35,20 @@ def get_db():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 애플리케이션 시작 시 작업
-    print("Database engine connected.")
+    print("Database engine 연결.")
 
     try:
         with engine.connect() as connection:
             result = connection.execute("SELECT DATABASE();")
-            print("Database connection successful:", result.fetchone())
+            print("Database 연결 성공:", result.fetchone())
     except SQLAlchemyError as e:
-        print("Database connection failed:", e)
+        print("Database 연결 실패:", e)
 
     yield
 
     # 애플리케이션 종료 시 작업
     engine.dispose()
-    print("Database engine disposed.")
+    print("Database engine 종료.")
 
 
 app = FastAPI(lifespan=lifespan)
