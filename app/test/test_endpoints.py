@@ -26,6 +26,7 @@ def test_create_user_success(client, db_session):
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["username"] == "testuser2"
 
+
 def test_create_user_failure(client):
     user_data = {"username": "testuser"}  # password 미포함
     response = client.post("/users/", json=user_data)
