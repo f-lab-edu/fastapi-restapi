@@ -13,9 +13,10 @@ def test_create_user_success(client, db_session):
     # TODO: 테스트 코드에도 타입 힌팅 추가
     # given
     user_data = {
-        "username": "testuser2",
-        "password": "testpassword2",
+        "role": "MEMBER",
+        "userid": "testuser2",
         "nickname": "tester2",
+        "password": "testpassword2",
     }
 
     # when
@@ -24,7 +25,10 @@ def test_create_user_success(client, db_session):
     # then
     # TODO: assert로 누락된 검증할 부분 추가하기 (API 리스폰스 바디, DB에 생성된 엔티티 확인)
     assert response.status_code == status.HTTP_200_OK
-    assert response.json()["username"] == "testuser2"
+    assert response.json()["role"] == "MEMBER"
+    assert response.json()["userid"] == "testuser2"
+    assert "id" in response.json()
+    assert "created_at" in response.json()
 
 
 def test_create_user_failure(client):
@@ -35,7 +39,8 @@ def test_create_user_failure(client):
     response = client.post("/users/", json=user_data)
 
     # then
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    #       "msg": "Value error, 비밀번호는 8자 이상이어야 합니다.",이것도 나와야함
 
 
 def test_read_user_success(client, auth_headers):
