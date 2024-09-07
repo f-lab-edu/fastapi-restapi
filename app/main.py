@@ -1,9 +1,13 @@
 import os
-
+import logging
 from fastapi import FastAPI
 
 from app.api.endpoints import router as api_router
 from app.database import Base, engine, get_db
+
+# 로거 설정
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -12,9 +16,9 @@ app.include_router(api_router, prefix="/api", tags=["api"])
 env = os.getenv("ENV", "production")
 
 if env == "development":
-    print("Dropping all tables...")
+    logger.info("Dropping all tables...")
     Base.metadata.drop_all(bind=engine)
-    print("Creating all tables...")
+    logger.info("Creating all tables...")
     Base.metadata.create_all(bind=engine)
 else:
-    print("Running in production mode; no automatic table creation or deletion.")
+    logger.info("Running in production mode; no automatic table creation or deletion.")
