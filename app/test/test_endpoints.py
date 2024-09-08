@@ -27,6 +27,7 @@ def test_create_user_success(client, db_session):
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["role"] == "MEMBER"
     assert response.json()["userid"] == "testuser2"
+    assert response.json()["nickname"] == "testuser2"
     assert "id" in response.json()
     assert "created_at" in response.json()
 
@@ -49,7 +50,11 @@ def test_read_user_success(client, auth_headers):
 
     # then
     assert response.status_code == status.HTTP_200_OK
-    assert response.json()["username"] == "testuser"
+    assert response.json()["role"] == "MEMBER"
+    assert response.json()["userid"] == "testuser2"
+    assert response.json()["nickname"] == "testuser2"
+    assert "id" in response.json()
+    assert "created_at" in response.json()
 
 
 def test_read_user_failure(client, auth_headers):
@@ -63,14 +68,20 @@ def test_read_user_failure(client, auth_headers):
 # Post 엔드포인트 테스트
 def test_create_post_success(client, auth_headers):
     # given
-    post_data = {"title": "Test Post", "content": "This is a test post."}
+    post_data = {
+        "title": "Test Post",
+        "content": "This is a test post.",
+    }
 
     # when
     response = client.post("/posts/", json=post_data, headers=auth_headers)
 
     # then
     assert response.status_code == status.HTTP_200_OK
+    assert "id" in response.json()
     assert response.json()["title"] == "Test Post"
+    assert "author" in response.json()
+    assert "created_at" in response.json()
 
 
 def test_create_post_failure(client, auth_headers):
@@ -91,7 +102,9 @@ def test_read_post_success(client, auth_headers):
 
     # then
     assert response.status_code == status.HTTP_200_OK
+    assert "id" in response.json()
     assert response.json()["title"] == "Test Post"
+    assert response.json()["content"] == "This is a test post."
 
 
 def test_read_post_failure(client):
@@ -111,7 +124,10 @@ def test_update_post_success(client, auth_headers):
 
     # then
     assert response.status_code == status.HTTP_200_OK
+    assert "id" in response.json()
     assert response.json()["title"] == "Updated Test Post"
+    assert response.json()["content"] == "Updated content"
+    assert "author" in response.json()
 
 
 def test_update_post_failure(client, auth_headers):
@@ -155,7 +171,11 @@ def test_create_comment_success(client, auth_headers):
 
     # then
     assert response.status_code == status.HTTP_200_OK
+    assert "id" in response.json()
+    assert "author_id" in response.json()
+    assert "post_id" in response.json()
     assert response.json()["content"] == "This is a comment"
+    assert "created_at" in response.json()
 
 
 def test_create_comment_failure(client, auth_headers):
@@ -176,7 +196,12 @@ def test_read_comment_success(client, auth_headers):
 
     # then
     assert response.status_code == status.HTTP_200_OK
+    assert response.status_code == status.HTTP_200_OK
+    assert "id" in response.json()
+    assert "author_id" in response.json()
+    assert "post_id" in response.json()
     assert response.json()["content"] == "This is a comment"
+    assert "created_at" in response.json()
 
 
 def test_read_comment_failure(client):
@@ -198,7 +223,11 @@ def test_update_comment_success(client, auth_headers):
 
     # then
     assert response.status_code == status.HTTP_200_OK
+    assert "id" in response.json()
+    assert "author_id" in response.json()
+    assert "post_id" in response.json()
     assert response.json()["content"] == "Updated Comment"
+    assert "created_at" in response.json()
 
 
 def test_update_comment_failure(client, auth_headers):
