@@ -30,18 +30,18 @@ def is_owner_or_admin(current_user: UserInDB, owner_id: int) -> bool:
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     try:
         # 비밀번호를 해시화하지 않고 그대로 전달
-        print(f"입력된 비밀번호: {user.password}")
+        logger.debug(f"입력된 비밀번호: {user.password}")
 
         user_service = UserService(db)
         new_user = user_service.create_user(user)
 
         # 데이터베이스 커밋 후 로그 출력
-        print("데이터베이스 커밋 성공")
+        logger.info("데이터베이스 커밋 성공")
         db.commit()
 
         return new_user
     except Exception as e:
-        print(f"회원가입 중 에러 발생: {str(e)}")
+        logger.error(f"회원가입 중 에러 발생: {str(e)}")
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -95,7 +95,8 @@ def update_post(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="게시글이 없습니다."
         )
-    print(
+
+    logger.debug(
         f"current_user.id: {current_user.userid}, post_in_db.author_id: {post_in_db.author_id}"
     )
 
@@ -110,6 +111,7 @@ def update_post(
         db.commit()
         return updated_post
     except Exception as e:
+        logger.error(f"게시글 수정 중 에러 발생: {str(e)}")  # 추가된 부분: 에러 로깅
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -368,18 +370,11 @@ def login_for_session(
     response.set_cookie(key="session_id", value=session_id, httponly=True)
 
     # 세션 ID를 응답으로 반환
-    return {"message": "Login successful", "session_id": session_id}
+    return {"message": "로그인 성공", "session_id": session_id}
 
 
 @router.post("/logout")
 def logout(response: Response, session_id: str = Cookie(None)):
     session_store.delete_session(session_id)  # 세션 삭제
     response.delete_cookie("session_id")  # 쿠키에서 세션 ID 제거
-    return {"message": "Logout successful"}
-
-
-@router.post("/logout")
-def logout(response: Response, session_id: str = Cookie(None)):
-    session_store.delete_session(session_id)  # 세션 삭제
-    response.delete_cookie("session_id")  # 쿠키에서 세션 ID 제거
-    return {"message": "Logout successful"}
+    return {"message": "로그아웃 성공"}
