@@ -13,7 +13,7 @@ def test_create_user(client: TestClient):
             "role": "MEMBER",
         },
     )
-    response.status_code == status.HTTP_HTTP_200_OK
+    response.status_code == status.HTTP_201_CREATED
     assert response.json()["userid"] == "testuser"
 
 
