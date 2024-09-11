@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 from typing import Optional
 
-from pydantic import UUID4, BaseModel, validator
+from pydantic import UUID4, BaseModel, field_validator, validator
 
 
 class Role(str, enum.Enum):
@@ -21,13 +21,16 @@ class UserCreate(UserBase):
     nickname: str
     password: str
 
-    @validator("password")
+    @field_validator("password")
     def validate_password_strength(cls, password: str) -> str:
         if len(password) < 8:
             raise ValueError("비밀번호는 8자 이상이어야 합니다.")
         if not any(char.isupper() for char in password):
             raise ValueError("비밀번호에는 대문자가 하나 이상 포함되어야 합니다.")
         return password
+
+    class Config:
+        from_attributes = True
 
 
 class UserRead(UserBase):
@@ -45,7 +48,7 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
     role: Optional[Role] = None
 
-    @validator("password")
+    @field_validator("password")
     def validate_password_strength(cls, password: str) -> str:
         if len(password) < 8:
             raise ValueError("비밀번호는 8자 이상이어야 합니다.")

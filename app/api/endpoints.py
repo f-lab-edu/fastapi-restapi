@@ -376,10 +376,3 @@ def logout(response: Response, session_id: str = Cookie(None)):
     session_store.delete_session(session_id)  # 세션 삭제
     response.delete_cookie("session_id")  # 쿠키에서 세션 ID 제거
     return {"message": "Logout successful"}
-
-
-@router.post("/logout")
-def logout(response: Response, session_id: str = Cookie(None)):
-    session_store.delete_session(session_id)  # 세션 삭제
-    response.delete_cookie("session_id")  # 쿠키에서 세션 ID 제거
-    return {"message": "Logout successful"}
