@@ -20,6 +20,8 @@ from app.session_store import get_session_store
 from app.session_store import DBSessionStore
 from fastapi.security import OAuth2PasswordRequestForm
 
+import logging
+
 router = APIRouter()
 
 
@@ -28,22 +30,36 @@ def is_owner_or_admin(current_user: UserInDB, owner_id: int) -> bool:
     return current_user.userid == owner_id or current_user.role == Role.ADMIN
 
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)  # 로그 레벨 설정
+
+# 콘솔 출력 핸들러 생성
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# 로그 포맷터 생성
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+
+# 로거에 핸들러 추가
+logger.addHandler(console_handler)
+
 @router.post("/users/", response_model=UserRead)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     try:
         # 비밀번호를 해시화하지 않고 그대로 전달
-        print(f"입력된 비밀번호: {user.password}")
+        logger.debug(f"입력된 비밀번호: {user.password}")
 
         user_service = UserService(db)
         new_user = user_service.create_user(user)
 
         # 데이터베이스 커밋 후 로그 출력
-        print("데이터베이스 커밋 성공")
         db.commit()
+        logger.info("데이터베이스 커밋 성공")
 
         return new_user
     except Exception as e:
-        print(f"회원가입 중 에러 발생: {str(e)}")
+        logger.error(f"회원가입 중 에러 발생: {str(e)}")
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -97,8 +113,9 @@ def update_post(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="게시글이 없습니다."
         )
-    print(
-        f"current_user.id: {current_user.userid}, post_in_db.author_id: {post_in_db.author_id}"
+
+    logger.debug(
+        f"현재 유저 id : {current_user.userid}, 게시글 작성자 id : {post_in_db.author_id}"
     )
 
     if not is_owner_or_admin(current_user, post_in_db.author_id):
@@ -110,9 +127,11 @@ def update_post(
     try:
         updated_post = post_service.update(post_id, post)
         db.commit()
+        logger.info(f"Post ID {post_id} 업데이트 성공.")
         return updated_post
     except Exception as e:
         db.rollback()
+        logger.error(f"게시글 업데이트 중 에러 발생: {str(e)}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
@@ -165,8 +184,8 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/users/{user_id}", response_model=UserRead)
-def read_user(user_id: int, db: Session = Depends(get_db)):
-    user = UserService(db).get(user_id)
+def read_user(userid: str, db: Session = Depends(get_db)):
+    user = UserService(db).get(userid)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="유저가 없습니다."
@@ -176,7 +195,7 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
 
 @router.patch("/users/{user_id}", response_model=UserRead)
 def update_user(
-    user_id: int,
+    userid: str,
     user: UserUpdate,
     db: Session = Depends(get_db),
     current_user: UserInDB = Depends(get_current_user),
@@ -184,14 +203,14 @@ def update_user(
     if user.password:
         user.password = get_password_hash(user.password)
 
-    if not is_owner_or_admin(current_user, user_id):
+    if not is_owner_or_admin(current_user, userid):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="유저 정보를 수정할 권한이 없습니다.",
         )
 
     try:
-        updated_user = UserService(db).update(user_id, user)
+        updated_user = UserService(db).update(userid, user)
         db.commit()
         return updated_user
     except Exception as e:
@@ -201,18 +220,18 @@ def update_user(
 
 @router.delete("/users/{user_id}")
 def delete_user(
-    user_id: int,
+    userid: str,
     db: Session = Depends(get_db),
     current_user: UserInDB = Depends(get_current_user),
 ):
-    if not is_owner_or_admin(current_user, user_id):
+    if not is_owner_or_admin(current_user, userid):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="유저를 삭제할 권한이 없습니다.",
         )
 
     try:
-        UserService(db).delete(user_id)
+        UserService(db).delete(userid)
         db.commit()
         return Response(status_code=status.HTTP_200_OK)
     except Exception as e:
@@ -236,7 +255,6 @@ def create_comment(
 ):
     try:
         comment_service = CommentService(db)
-        # current_user의 id를 author_id로 사용
         new_comment = comment_service.create(comment, author_id=current_user.userid)
         db.commit()
         return new_comment
