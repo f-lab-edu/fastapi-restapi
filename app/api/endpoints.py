@@ -349,14 +349,7 @@ def read_comments_by_post(
 
 # 세션 기반 프로필 정보 확인
 @router.get("/profile")
-<<<<<<< HEAD
-def get_user_profile(
-    session_id: str = Cookie(None),
-    session_store: DBSessionStore = Depends(get_session_store),
-):
-=======
 def get_user_profile(session_id: str = Cookie(None), session_store: DBSessionStore = Depends(get_session_store)):
->>>>>>> main
     session_data = session_store.get_session(session_id)
 
     if not session_data:
@@ -399,7 +392,6 @@ def login_for_session(
 
     # 세션 생성 (1일 만료)
     try:
-<<<<<<< HEAD
         session_id = session_store.create_session(
             session_data, expires_in=timedelta(days=1)
         )
@@ -407,11 +399,10 @@ def login_for_session(
         raise HTTPException(
             status_code=500, detail=f"Session creation failed: {str(e)}"
         )
-=======
+
         session_id = session_store.create_session(session_data, expires_in=timedelta(days=1))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Session creation failed: {str(e)}")
->>>>>>> main
 
     # 세션 ID 쿠키로 설정 (secure=True는 HTTPS 환경에서만 전송)
     response.set_cookie(
@@ -419,11 +410,7 @@ def login_for_session(
         value=session_id,
         httponly=True,
         secure=False,  # 프로덕션 환경에서는 True로 설정할 것
-<<<<<<< HEAD
-        samesite="Lax",  # CSRF 방지 설정
-=======
         samesite='Lax'  # CSRF 방지 설정
->>>>>>> main
     )
 
     # 세션 ID를 응답으로 반환
@@ -432,19 +419,6 @@ def login_for_session(
 
 @router.post("/logout")
 def logout(
-<<<<<<< HEAD
-    response: Response,
-    userid: str,  # 로그아웃할 사용자의 userid를 입력받음
-    db: Session = Depends(get_db),
-    session_store=Depends(get_session_store),  # session_store 의존성 주입
-):
-    # 해당 사용자의 세션을 조회
-    session = (
-        db.query(SessionModel)
-        .filter(SessionModel.data.contains(f'"userid": "{userid}"'))
-        .first()
-    )
-=======
         response: Response,
         userid: str,  # 로그아웃할 사용자의 userid를 입력받음
         db: Session = Depends(get_db),
@@ -452,29 +426,20 @@ def logout(
 ):
     # 해당 사용자의 세션을 조회
     session = db.query(SessionModel).filter(SessionModel.data.contains(f'"userid": "{userid}"')).first()
->>>>>>> main
 
     if not session:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-<<<<<<< HEAD
-            detail=f"로그인 되지 않은 유저: {userid}",
-=======
-            detail=f"로그인 되지 않은 유저: {userid}"
->>>>>>> main
+            detail=f"No active session found for user: {userid}"
         )
 
     # 조회된 세션 삭제
     try:
         session_store.delete_session(session.session_id)  # 세션 삭제 메서드 호출
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"로그아웃 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Session deletion failed: {str(e)}")
 
     # 세션 쿠키 제거
     response.delete_cookie(key="session_id")
 
-<<<<<<< HEAD
-    return {"message": f"로그아웃 성공 / 계정 : {userid}"}
-=======
-    return {"message": f"로그아웃 성공 / 계정 : {userid}"}
->>>>>>> main
+    return {"message": f"Logout successful for user {userid}"}
