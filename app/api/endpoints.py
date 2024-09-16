@@ -9,27 +9,17 @@ from app.auth.dependencies import get_current_user
 from app.auth.utils import get_password_hash, verify_password
 from app.database import get_db
 from app.domain.models.post import Post
-from app.domain.models.session import SessionModel
 from app.domain.models.user import Role
-<<<<<<< HEAD
-from app.domain.schemas.comment import (CommentCreate, CommentRead,
-                                        CommentUpdate)
-=======
 from app.domain.models.session import SessionModel
 from app.domain.schemas.comment import CommentCreate, CommentRead, CommentUpdate
->>>>>>> main
 from app.domain.schemas.post import PostCreate, PostRead, PostUpdate
 from app.domain.schemas.user import UserCreate, UserInDB, UserRead, UserUpdate
 from app.service.comment_service import CommentService
 from app.service.post_service import PostService
 from app.service.user_service import UserService
-<<<<<<< HEAD
-from app.session_store import DBSessionStore, get_session_store
-=======
 from app.session_store import get_session_store
 from app.session_store import DBSessionStore
 from fastapi.security import OAuth2PasswordRequestForm
->>>>>>> main
 
 router = APIRouter()
 

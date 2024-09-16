@@ -19,21 +19,7 @@ class User(Base):
     created_at = Column(DateTime, default=func.now(), nullable=False, server_default=func.now())
 
     posts = relationship("Post", back_populates="author", cascade="all, delete-orphan")
-<<<<<<< HEAD
-    comments = relationship(
-        "Comment", back_populates="author", cascade="all, delete-orphan"
-    )
-
-    # 1:1 관계 설정: 유저당 하나의 세션만 허용
-    session = relationship(
-        "SessionModel",
-        back_populates="user",
-        uselist=False,
-        cascade="all, delete-orphan",
-    )
-=======
     comments = relationship("Comment", back_populates="author", cascade="all, delete-orphan")
 
     # 1:1 관계 설정: 유저당 하나의 세션만 허용
     session = relationship("SessionModel", back_populates="user", uselist=False, cascade="all, delete-orphan")
->>>>>>> main
