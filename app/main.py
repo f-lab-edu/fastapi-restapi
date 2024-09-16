@@ -9,4 +9,8 @@ app = FastAPI()
 app.include_router(router, prefix="/api", tags=["api"])
 
 Base.metadata.drop_all(bind=engine)
+<<<<<<< HEAD
 Base.metadata.create_all(bind=engine)
+=======
+Base.metadata.create_all(bind=engine)
+>>>>>>> main
