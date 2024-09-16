@@ -49,8 +49,8 @@ class UserService:
             return None
         return UserInDB.from_orm(user)
 
-    def get(self, user_id: int) -> Optional[UserInDB]:
-        user = self.db.query(User).filter(User.id == user_id).first()
+    def get(self, userid: str) -> Optional[UserInDB]:
+        user = self.db.query(User).filter(User.userid == userid).first()
         if user:
             return UserInDB.from_orm(user)
         return None
@@ -62,18 +62,12 @@ class UserService:
             return UserInDB.from_orm(user)
         return None
 
-    # def get_by_nickname(self, nickname: str) -> Optional[UserInDB]:
-    #     user = self.db.query(User).filter(User.nickname == nickname).first()
-    #     if user:
-    #         return UserInDB.from_orm(user)
-    #     return None
-
     def get_multi(self, skip: int = 0, limit: int = 10) -> List[UserRead]:
         users = self.db.query(User).offset(skip).limit(limit).all()
         return [UserRead.from_orm(user) for user in users]
 
-    def update(self, user_id: int, user_update: UserUpdate) -> UserRead:
-        user = self.db.query(User).filter(User.id == user_id).first()
+    def update(self, userid: str, user_update: UserUpdate) -> UserRead:
+        user = self.db.query(User).filter(User.userid == userid).first()
         if not user:
             raise ValueError("유저가 없습니다.")
         if user_update.password:
@@ -84,8 +78,8 @@ class UserService:
         self.db.refresh(user)
         return UserRead.from_orm(user)
 
-    def delete(self, user_id: int):
-        user = self.db.query(User).filter(User.id == user_id).first()
+    def delete(self, userid: str):
+        user = self.db.query(User).filter(User.userid == userid).first()
         if user:
             self.db.delete(user)
             self.db.commit()

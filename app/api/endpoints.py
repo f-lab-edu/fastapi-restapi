@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 from typing import List
 
@@ -8,17 +9,27 @@ from app.auth.dependencies import get_current_user
 from app.auth.utils import get_password_hash, verify_password
 from app.database import get_db
 from app.domain.models.post import Post
+from app.domain.models.session import SessionModel
 from app.domain.models.user import Role
+<<<<<<< HEAD
+from app.domain.schemas.comment import (CommentCreate, CommentRead,
+                                        CommentUpdate)
+=======
 from app.domain.models.session import SessionModel
 from app.domain.schemas.comment import CommentCreate, CommentRead, CommentUpdate
+>>>>>>> main
 from app.domain.schemas.post import PostCreate, PostRead, PostUpdate
 from app.domain.schemas.user import UserCreate, UserInDB, UserRead, UserUpdate
 from app.service.comment_service import CommentService
 from app.service.post_service import PostService
 from app.service.user_service import UserService
+<<<<<<< HEAD
+from app.session_store import DBSessionStore, get_session_store
+=======
 from app.session_store import get_session_store
 from app.session_store import DBSessionStore
 from fastapi.security import OAuth2PasswordRequestForm
+>>>>>>> main
 
 router = APIRouter()
 
@@ -28,22 +39,37 @@ def is_owner_or_admin(current_user: UserInDB, owner_id: int) -> bool:
     return current_user.userid == owner_id or current_user.role == Role.ADMIN
 
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)  # 로그 레벨 설정
+
+# 콘솔 출력 핸들러 생성
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# 로그 포맷터 생성
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+console_handler.setFormatter(formatter)
+
+# 로거에 핸들러 추가
+logger.addHandler(console_handler)
+
+
 @router.post("/users/", response_model=UserRead)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     try:
         # 비밀번호를 해시화하지 않고 그대로 전달
-        print(f"입력된 비밀번호: {user.password}")
+        logger.debug(f"입력된 비밀번호: {user.password}")
 
         user_service = UserService(db)
         new_user = user_service.create_user(user)
 
         # 데이터베이스 커밋 후 로그 출력
-        print("데이터베이스 커밋 성공")
         db.commit()
+        logger.info("데이터베이스 커밋 성공")
 
         return new_user
     except Exception as e:
-        print(f"회원가입 중 에러 발생: {str(e)}")
+        logger.error(f"회원가입 중 에러 발생: {str(e)}")
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -97,8 +123,9 @@ def update_post(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="게시글이 없습니다."
         )
-    print(
-        f"current_user.id: {current_user.userid}, post_in_db.author_id: {post_in_db.author_id}"
+
+    logger.debug(
+        f"현재 유저 id : {current_user.userid}, 게시글 작성자 id : {post_in_db.author_id}"
     )
 
     if not is_owner_or_admin(current_user, post_in_db.author_id):
@@ -110,9 +137,11 @@ def update_post(
     try:
         updated_post = post_service.update(post_id, post)
         db.commit()
+        logger.info(f"Post ID {post_id} 업데이트 성공.")
         return updated_post
     except Exception as e:
         db.rollback()
+        logger.error(f"게시글 업데이트 중 에러 발생: {str(e)}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
@@ -165,8 +194,8 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/users/{user_id}", response_model=UserRead)
-def read_user(user_id: int, db: Session = Depends(get_db)):
-    user = UserService(db).get(user_id)
+def read_user(userid: str, db: Session = Depends(get_db)):
+    user = UserService(db).get(userid)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="유저가 없습니다."
@@ -176,7 +205,7 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
 
 @router.patch("/users/{user_id}", response_model=UserRead)
 def update_user(
-    user_id: int,
+    userid: str,
     user: UserUpdate,
     db: Session = Depends(get_db),
     current_user: UserInDB = Depends(get_current_user),
@@ -184,14 +213,14 @@ def update_user(
     if user.password:
         user.password = get_password_hash(user.password)
 
-    if not is_owner_or_admin(current_user, user_id):
+    if not is_owner_or_admin(current_user, userid):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="유저 정보를 수정할 권한이 없습니다.",
         )
 
     try:
-        updated_user = UserService(db).update(user_id, user)
+        updated_user = UserService(db).update(userid, user)
         db.commit()
         return updated_user
     except Exception as e:
@@ -201,18 +230,18 @@ def update_user(
 
 @router.delete("/users/{user_id}")
 def delete_user(
-    user_id: int,
+    userid: str,
     db: Session = Depends(get_db),
     current_user: UserInDB = Depends(get_current_user),
 ):
-    if not is_owner_or_admin(current_user, user_id):
+    if not is_owner_or_admin(current_user, userid):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="유저를 삭제할 권한이 없습니다.",
         )
 
     try:
-        UserService(db).delete(user_id)
+        UserService(db).delete(userid)
         db.commit()
         return Response(status_code=status.HTTP_200_OK)
     except Exception as e:
@@ -236,7 +265,6 @@ def create_comment(
 ):
     try:
         comment_service = CommentService(db)
-        # current_user의 id를 author_id로 사용
         new_comment = comment_service.create(comment, author_id=current_user.userid)
         db.commit()
         return new_comment
@@ -321,7 +349,14 @@ def read_comments_by_post(
 
 # 세션 기반 프로필 정보 확인
 @router.get("/profile")
+<<<<<<< HEAD
+def get_user_profile(
+    session_id: str = Cookie(None),
+    session_store: DBSessionStore = Depends(get_session_store),
+):
+=======
 def get_user_profile(session_id: str = Cookie(None), session_store: DBSessionStore = Depends(get_session_store)):
+>>>>>>> main
     session_data = session_store.get_session(session_id)
 
     if not session_data:
@@ -364,9 +399,19 @@ def login_for_session(
 
     # 세션 생성 (1일 만료)
     try:
+<<<<<<< HEAD
+        session_id = session_store.create_session(
+            session_data, expires_in=timedelta(days=1)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Session creation failed: {str(e)}"
+        )
+=======
         session_id = session_store.create_session(session_data, expires_in=timedelta(days=1))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Session creation failed: {str(e)}")
+>>>>>>> main
 
     # 세션 ID 쿠키로 설정 (secure=True는 HTTPS 환경에서만 전송)
     response.set_cookie(
@@ -374,7 +419,11 @@ def login_for_session(
         value=session_id,
         httponly=True,
         secure=False,  # 프로덕션 환경에서는 True로 설정할 것
+<<<<<<< HEAD
+        samesite="Lax",  # CSRF 방지 설정
+=======
         samesite='Lax'  # CSRF 방지 설정
+>>>>>>> main
     )
 
     # 세션 ID를 응답으로 반환
@@ -383,6 +432,19 @@ def login_for_session(
 
 @router.post("/logout")
 def logout(
+<<<<<<< HEAD
+    response: Response,
+    userid: str,  # 로그아웃할 사용자의 userid를 입력받음
+    db: Session = Depends(get_db),
+    session_store=Depends(get_session_store),  # session_store 의존성 주입
+):
+    # 해당 사용자의 세션을 조회
+    session = (
+        db.query(SessionModel)
+        .filter(SessionModel.data.contains(f'"userid": "{userid}"'))
+        .first()
+    )
+=======
         response: Response,
         userid: str,  # 로그아웃할 사용자의 userid를 입력받음
         db: Session = Depends(get_db),
@@ -390,11 +452,16 @@ def logout(
 ):
     # 해당 사용자의 세션을 조회
     session = db.query(SessionModel).filter(SessionModel.data.contains(f'"userid": "{userid}"')).first()
+>>>>>>> main
 
     if not session:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
+<<<<<<< HEAD
+            detail=f"로그인 되지 않은 유저: {userid}",
+=======
             detail=f"로그인 되지 않은 유저: {userid}"
+>>>>>>> main
         )
 
     # 조회된 세션 삭제
@@ -406,4 +473,8 @@ def logout(
     # 세션 쿠키 제거
     response.delete_cookie(key="session_id")
 
+<<<<<<< HEAD
     return {"message": f"로그아웃 성공 / 계정 : {userid}"}
+=======
+    return {"message": f"로그아웃 성공 / 계정 : {userid}"}
+>>>>>>> main
