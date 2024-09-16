@@ -1,4 +1,5 @@
 import logging
+
 from passlib.context import CryptContext
 from passlib.hash import bcrypt
 
@@ -11,7 +12,7 @@ console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)
 
 # 로그 포맷터 생성
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 console_handler.setFormatter(formatter)
 
 # 로거에 핸들러 추가

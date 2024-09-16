@@ -1,26 +1,25 @@
+import logging
 from datetime import timedelta
 from typing import List
 
-from fastapi import APIRouter, Response, Cookie, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
 from app.auth.utils import get_password_hash, verify_password
 from app.database import get_db
 from app.domain.models.post import Post
-from app.domain.models.user import Role
 from app.domain.models.session import SessionModel
-from app.domain.schemas.comment import CommentCreate, CommentRead, CommentUpdate
+from app.domain.models.user import Role
+from app.domain.schemas.comment import (CommentCreate, CommentRead,
+                                        CommentUpdate)
 from app.domain.schemas.post import PostCreate, PostRead, PostUpdate
 from app.domain.schemas.user import UserCreate, UserInDB, UserRead, UserUpdate
 from app.service.comment_service import CommentService
 from app.service.post_service import PostService
 from app.service.user_service import UserService
-from app.session_store import get_session_store
-from app.session_store import DBSessionStore
-from fastapi.security import OAuth2PasswordRequestForm
-
-import logging
+from app.session_store import DBSessionStore, get_session_store
 
 router = APIRouter()
 
@@ -38,11 +37,12 @@ console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.DEBUG)
 
 # 로그 포맷터 생성
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 console_handler.setFormatter(formatter)
 
 # 로거에 핸들러 추가
 logger.addHandler(console_handler)
+
 
 @router.post("/users/", response_model=UserRead)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
@@ -339,7 +339,10 @@ def read_comments_by_post(
 
 # 세션 기반 프로필 정보 확인
 @router.get("/profile")
-def get_user_profile(session_id: str = Cookie(None), session_store: DBSessionStore = Depends(get_session_store)):
+def get_user_profile(
+    session_id: str = Cookie(None),
+    session_store: DBSessionStore = Depends(get_session_store),
+):
     session_data = session_store.get_session(session_id)
 
     if not session_data:
@@ -382,9 +385,13 @@ def login_for_session(
 
     # 세션 생성 (1일 만료)
     try:
-        session_id = session_store.create_session(session_data, expires_in=timedelta(days=1))
+        session_id = session_store.create_session(
+            session_data, expires_in=timedelta(days=1)
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Session creation failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Session creation failed: {str(e)}"
+        )
 
     # 세션 ID 쿠키로 설정 (secure=True는 HTTPS 환경에서만 전송)
     response.set_cookie(
@@ -392,7 +399,7 @@ def login_for_session(
         value=session_id,
         httponly=True,
         secure=False,  # 프로덕션 환경에서는 True로 설정할 것
-        samesite='Lax'  # CSRF 방지 설정
+        samesite="Lax",  # CSRF 방지 설정
     )
 
     # 세션 ID를 응답으로 반환
@@ -401,18 +408,22 @@ def login_for_session(
 
 @router.post("/logout")
 def logout(
-        response: Response,
-        userid: str,  # 로그아웃할 사용자의 userid를 입력받음
-        db: Session = Depends(get_db),
-        session_store=Depends(get_session_store)  # session_store 의존성 주입
+    response: Response,
+    userid: str,  # 로그아웃할 사용자의 userid를 입력받음
+    db: Session = Depends(get_db),
+    session_store=Depends(get_session_store),  # session_store 의존성 주입
 ):
     # 해당 사용자의 세션을 조회
-    session = db.query(SessionModel).filter(SessionModel.data.contains(f'"userid": "{userid}"')).first()
+    session = (
+        db.query(SessionModel)
+        .filter(SessionModel.data.contains(f'"userid": "{userid}"'))
+        .first()
+    )
 
     if not session:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"로그인 되지 않은 유저: {userid}"
+            detail=f"로그인 되지 않은 유저: {userid}",
         )
 
     # 조회된 세션 삭제
