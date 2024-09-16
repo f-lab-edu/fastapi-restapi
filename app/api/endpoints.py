@@ -1,8 +1,7 @@
 from datetime import timedelta
 from typing import List
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, Response, Cookie, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -10,13 +9,16 @@ from app.auth.utils import get_password_hash, verify_password
 from app.database import get_db
 from app.domain.models.post import Post
 from app.domain.models.user import Role
+from app.domain.models.session import SessionModel
 from app.domain.schemas.comment import CommentCreate, CommentRead, CommentUpdate
 from app.domain.schemas.post import PostCreate, PostRead, PostUpdate
 from app.domain.schemas.user import UserCreate, UserInDB, UserRead, UserUpdate
 from app.service.comment_service import CommentService
 from app.service.post_service import PostService
 from app.service.user_service import UserService
-from app.session_store import session_store
+from app.session_store import get_session_store
+from app.session_store import DBSessionStore
+from fastapi.security import OAuth2PasswordRequestForm
 
 router = APIRouter()
 
@@ -319,7 +321,7 @@ def read_comments_by_post(
 
 # 세션 기반 프로필 정보 확인
 @router.get("/profile")
-def get_user_profile(session_id: str = Cookie(None)):
+def get_user_profile(session_id: str = Cookie(None), session_store: DBSessionStore = Depends(get_session_store)):
     session_data = session_store.get_session(session_id)
 
     if not session_data:
@@ -328,14 +330,15 @@ def get_user_profile(session_id: str = Cookie(None)):
             detail="세션을 찾을 수 없거나 만료되었습니다.",
         )
 
-    return {"user": session_data["username"]}
+    return {"user": session_data["nickname"]}  # 수정: user -> nickname
 
 
 @router.post("/login")
 def login_for_session(
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    response: Response = Response(),
     db: Session = Depends(get_db),
+    session_store=Depends(get_session_store),  # SessionStore를 의존성으로 주입받음
 ):
     user_service = UserService(db)
 
@@ -346,10 +349,10 @@ def login_for_session(
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="잘못된 사용자 이름 또는 비밀번호",
         )
 
-    # 세션 생성 시 모든 유저 정보를 포함시킴
+    # 세션 데이터 생성
     session_data = {
         "userid": user.userid,
         "nickname": user.nickname,
@@ -360,26 +363,47 @@ def login_for_session(
     }
 
     # 세션 생성 (1일 만료)
-    session_id = session_store.create_session(
-        session_data, expires_in=timedelta(days=1)
+    try:
+        session_id = session_store.create_session(session_data, expires_in=timedelta(days=1))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Session creation failed: {str(e)}")
+
+    # 세션 ID 쿠키로 설정 (secure=True는 HTTPS 환경에서만 전송)
+    response.set_cookie(
+        key="session_id",
+        value=session_id,
+        httponly=True,
+        secure=False,  # 프로덕션 환경에서는 True로 설정할 것
+        samesite='Lax'  # CSRF 방지 설정
     )
 
-    # 세션 ID 쿠키로 설정
-    response.set_cookie(key="session_id", value=session_id, httponly=True)
-
     # 세션 ID를 응답으로 반환
-    return {"message": "Login successful", "session_id": session_id}
+    return {"message": "로그인 성공", "session_id": session_id}
 
 
 @router.post("/logout")
-def logout(response: Response, session_id: str = Cookie(None)):
-    session_store.delete_session(session_id)  # 세션 삭제
-    response.delete_cookie("session_id")  # 쿠키에서 세션 ID 제거
-    return {"message": "Logout successful"}
+def logout(
+        response: Response,
+        userid: str,  # 로그아웃할 사용자의 userid를 입력받음
+        db: Session = Depends(get_db),
+        session_store=Depends(get_session_store)  # session_store 의존성 주입
+):
+    # 해당 사용자의 세션을 조회
+    session = db.query(SessionModel).filter(SessionModel.data.contains(f'"userid": "{userid}"')).first()
 
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"로그인 되지 않은 유저: {userid}"
+        )
 
-@router.post("/logout")
-def logout(response: Response, session_id: str = Cookie(None)):
-    session_store.delete_session(session_id)  # 세션 삭제
-    response.delete_cookie("session_id")  # 쿠키에서 세션 ID 제거
-    return {"message": "Logout successful"}
+    # 조회된 세션 삭제
+    try:
+        session_store.delete_session(session.session_id)  # 세션 삭제 메서드 호출
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"로그아웃 실패: {str(e)}")
+
+    # 세션 쿠키 제거
+    response.delete_cookie(key="session_id")
+
+    return {"message": f"로그아웃 성공 / 계정 : {userid}"}
