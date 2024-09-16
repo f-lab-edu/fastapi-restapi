@@ -1,10 +1,17 @@
-from fastapi import Cookie, Depends, HTTPException
-
+from fastapi import Cookie, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from app.database import get_db  # 세션 관리를 위한 DB 의존성 가져오기
+from app.session_store import DBSessionStore  # DBSessionStore 사용
 from app.domain.schemas.user import UserInDB
-from app.session_store import session_store
+# DBSessionStore 인스턴스 생성
+def get_db_session_store(db: Session = Depends(get_db)):
+    return DBSessionStore(db)
 
-
-def get_current_user(session_id: str = Cookie(None)) -> UserInDB:
+def get_current_user(
+    session_id: str = Cookie(None),
+    session_store: DBSessionStore = Depends(get_db_session_store)  # DBSessionStore 사용
+) -> UserInDB:
+    # 세션 스토어에서 세션 데이터 가져오기
     session_data = session_store.get_session(session_id)
 
     if not session_data:
