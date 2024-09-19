@@ -11,12 +11,19 @@ def get_current_user(
     session_id: str = Cookie(None),
     session_store: DBSessionStore = Depends(get_db_session_store)  # DBSessionStore 사용
 ) -> UserInDB:
+    # 쿠키에 세션 ID가 없을 경우
+    if not session_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,  # 401로 수정
+            detail="세션 ID가 없거나 유효하지 않습니다.",
+        )
+
     # 세션 스토어에서 세션 데이터 가져오기
     session_data = session_store.get_session(session_id)
 
     if not session_data:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_401_UNAUTHORIZED,  # 401로 수정
             detail="세션을 찾을 수 없거나 만료되었습니다.",
         )
 
