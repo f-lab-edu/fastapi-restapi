@@ -30,6 +30,7 @@ def is_owner_or_admin(current_user: UserInDB, owner_id: int) -> bool:
 
 
 # TODO: 로거 중복 코드 제거하기. 로거를 한군데서 관리하기
+# TODO: 로그 레벨, 포맷을 환경 변수로 주입받기
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # 로그 레벨 설정
 
