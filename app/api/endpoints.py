@@ -75,10 +75,11 @@ def create_post(
         new_post = post_service.create(post_create=post, author_id=current_user.userid)
         db.commit()
         return new_post
-    except Exception as e:
+    except HTTPException as e:  # 인증 관련 예외는 401로 처리
+        raise e
+    except Exception as e:  # 그 외 예외는 400으로 처리
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
 
 @router.get("/posts/{post_id}", response_model=PostRead)
 def read_post(post_id: int, db: Session = Depends(get_db)):
@@ -185,7 +186,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
 
 @router.get("/users/{user_id}", response_model=UserRead)
 def read_user(userid: str, db: Session = Depends(get_db)):
-    user = UserService(db).get(userid)
+    user = UserRead.from_orm(user_orm_instance)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="유저가 없습니다."

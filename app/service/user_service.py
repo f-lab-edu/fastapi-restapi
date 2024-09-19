@@ -41,7 +41,7 @@ class UserService:
         self.db.commit()
         self.db.refresh(user)
 
-        return UserRead.from_orm(user)
+        return UserRead.model_validate(user)
 
     def authenticate_user(self, userid: str, password: str) -> Optional[UserInDB]:
         user = self.db.query(User).filter(User.userid == userid).first()
