@@ -29,6 +29,7 @@ def is_owner_or_admin(current_user: UserInDB, owner_id: int) -> bool:
     return current_user.userid == owner_id or current_user.role == Role.ADMIN
 
 
+# TODO: 로거 중복 코드 제거하기. 로거를 한군데서 관리하기
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)  # 로그 레벨 설정
 
@@ -46,7 +47,9 @@ logger.addHandler(console_handler)
 
 @router.post("/users/", response_model=UserRead)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    # TODO: 해당 아이디를 사용하는 유저가 있는지 먼저 확인하기. 만약 있으면 409 Conflict 응답 내기
     try:
+        # TODO: 아래 같은 로깅은 위험함. 삭제하기.
         # 비밀번호를 해시화하지 않고 그대로 전달
         logger.debug(f"입력된 비밀번호: {user.password}")
 
