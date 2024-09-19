@@ -1,3 +1,5 @@
+# TODO: 멀티 스테이징 빌드 적용하기
+
 # 베이스 이미지로 Python 3.10 사용
 FROM python:3.10.0-slim
 
