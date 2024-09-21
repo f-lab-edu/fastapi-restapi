@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+=======
+# TODO: improt 문 순서
+
+>>>>>>> ee5771430b0025a122ae61e2786cc1c8b222e56c
 import pytest  # pytest 사용을 위해 import
 from fastapi.testclient import TestClient  # FastAPI의 TestClient 사용
 from sqlalchemy.orm import Session  # 세션 사용 시 필요
@@ -9,24 +14,51 @@ from app.domain.schemas.post import PostCreate
 from app.service.post_service import PostService
 from app.auth.dependencies import get_current_user
 
+<<<<<<< HEAD
 # 유저 생성 성공 및 삭제
 def test_create_user_success(client):
+=======
+# TODO: 나머지 엔드포인트들도 테스트 함수 모두 추가하기
+
+# 유저 생성 성공 및 삭제
+def test_create_user_success(client):
+    # TODO: given / when / then 주석 추가하기
+    # given
+>>>>>>> ee5771430b0025a122ae61e2786cc1c8b222e56c
     user_data = {
         "userid": "testuser123",
         "password": "Testpassword1234",
         "role": "MEMBER",
         "nickname": "tester"
     }
+<<<<<<< HEAD
     response = client.post("/users/", json=user_data)
     assert response.status_code == 200
     response_json = response.json()
 
+=======
+
+    # when
+    response = client.post("/users/", json=user_data)
+
+    # then
+    assert response.status_code == 200
+    response_json = response.json()
+>>>>>>> ee5771430b0025a122ae61e2786cc1c8b222e56c
     assert response_json["userid"] == "testuser123"
     assert response_json["nickname"] == "tester"
     assert "id" in response_json
     assert "created_at" in response_json
 
+<<<<<<< HEAD
 def test_create_user_failure(client):
+=======
+    # TODO: DB에 row가 들어갔는지 + 값은 잘 맞는지 확인하기
+
+# TODO: 아래처럼 테스트 케이스 함수 이름 구체적으로 적기
+# TODO: 실패할 수 있는 다른 경우도 생각해보기
+def test_create_user_failure_when_user_already_exist(client):
+>>>>>>> ee5771430b0025a122ae61e2786cc1c8b222e56c
     # 같은 사용자를 다시 생성하여 유니크 제약 조건 위반을 유발
     user_data = {
         "userid": "testuser123",  # 필수 필드
@@ -43,6 +75,10 @@ def test_create_user_failure(client):
     response_second = client.post("/users/", json=user_data)
 
     # 응답 상태 코드가 400인지 확인 (중복된 사용자로 인해 실패해야 함)
+<<<<<<< HEAD
+=======
+    # TODO: 409로 수정하기
+>>>>>>> ee5771430b0025a122ae61e2786cc1c8b222e56c
     assert response_second.status_code == 400  # 중복 사용자로 인한 400 상태 코드 기대
 
     # 응답에 'detail' 필드가 있는지 확인 (에러 메시지 포함)
@@ -156,6 +192,11 @@ def test_create_post_failure_missing_title(client: TestClient, db_session: Sessi
         return authenticated_user
 
     # 의존성 오버라이드 설정
+<<<<<<< HEAD
+=======
+    # TODO: 모킹을 쓰면 페이크 객체보다 뭐가 더 좋고 안좋을까? (그 반대는?)
+    # TOOD: 그 밖에 테스트 더블은 뭐가 있을까? 장단점은 뭔지? 그리고 언제 쓰면 좋은지?
+>>>>>>> ee5771430b0025a122ae61e2786cc1c8b222e56c
     client.app.dependency_overrides[get_current_user] = mock_get_current_user
 
     # 게시글 생성 요청 (제목 누락)
