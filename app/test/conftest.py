@@ -2,15 +2,23 @@
 import os
 
 import pytest
+
+# conftest.py
+from dotenv import load_dotenv
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session, sessionmaker
 from testcontainers.mysql import MySqlContainer
 
 from app.auth.dependencies import get_current_user
 from app.auth.utils import get_password_hash
+from app.config import Settings
 from app.database import Base, get_db, get_engine
 from app.domain.models.user import User
 from app.session_store import DBSessionStore, get_session_store  # DBSessionStore 임포트
+
+
+def pytest_configure():
+    load_dotenv(dotenv_path=".env.test")
 
 
 # `Testcontainers`를 사용하여 MySQL 컨테이너 생성
@@ -146,3 +154,13 @@ def other_user(db_session: Session) -> User:
     db_session.add(user)
     db_session.commit()
     return user
+
+
+@pytest.fixture
+def override_settings():
+    from app.config import get_settings
+
+    def get_test_settings():
+        return Settings(_env_file=".env.test")
+
+    app.dependency_overrides[get_settings] = get_test_settings
