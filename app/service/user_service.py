@@ -13,20 +13,19 @@ class UserService:
         self.db = db
 
     def create_user(self, user_create: UserCreate) -> UserRead:
-        # 먼저 중복된 userid 또는 nickname이 있는지 확인
+        # 먼저 중복된 userid가 있는지 확인
         existing_user = (
-            self.db.query(User)
-            .filter(
-                (User.userid == user_create.userid)
-                | (User.nickname == user_create.nickname)
-            )
-            .first()
+            self.db.query(User).filter(User.userid == user_create.userid).first()
         )
 
         if existing_user:
-            raise ValueError("이미 존재하는 사용자 ID 또는 닉네임입니다.")
+            # 중복된 사용자 ID가 있을 경우 409 Conflict 에러 발생
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="이미 존재하는 사용자 ID입니다.",
+            )
 
-            # 비밀번호 해시화
+        # 비밀번호 해시화
         hashed_password = get_password_hash(user_create.password)
 
         # 사용자 생성 및 데이터베이스에 저장

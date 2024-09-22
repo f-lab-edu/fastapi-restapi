@@ -2,24 +2,24 @@ import logging
 from datetime import timedelta
 from typing import List
 
-from fastapi import APIRouter, Response, Cookie, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
 from app.auth.utils import get_password_hash, verify_password
 from app.database import get_db
+from app.domain.models.user import User
 from app.domain.models.post import Post
-from app.domain.models.user import Role
 from app.domain.models.session import SessionModel
+from app.domain.models.user import Role
 from app.domain.schemas.comment import CommentCreate, CommentRead, CommentUpdate
 from app.domain.schemas.post import PostCreate, PostRead, PostUpdate
 from app.domain.schemas.user import UserCreate, UserInDB, UserRead, UserUpdate
 from app.service.comment_service import CommentService
 from app.service.post_service import PostService
 from app.service.user_service import UserService
-from app.session_store import get_session_store
-from app.session_store import DBSessionStore
-from fastapi.security import OAuth2PasswordRequestForm
+from app.session_store import DBSessionStore, get_session_store
 
 router = APIRouter()
 
@@ -47,13 +47,18 @@ logger.addHandler(console_handler)
 
 
 @router.post("/users/", response_model=UserRead)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    # TODO: 해당 아이디를 사용하는 유저가 있는지 먼저 확인하기. 만약 있으면 409 Conflict 응답 내기
+def create_user(user: UserCreate, db: Session = Depends(get_db)): 
     try:
-        # TODO: 아래 같은 로깅은 위험함. 삭제하기.
-        # 비밀번호를 해시화하지 않고 그대로 전달
-        logger.debug(f"입력된 비밀번호: {user.password}")
+        existing_user = db.query(User).filter(User.userid == user.userid).first()
 
+        if existing_user:
+            # 만약 중복된 사용자가 있다면 409 Conflict 에러 반환
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="이미 존재하는 사용자 ID 또는 닉네임입니다.",
+            )
+
+        # 유저 생성 서비스 호출
         user_service = UserService(db)
         new_user = user_service.create_user(user)
 
@@ -62,10 +67,31 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         logger.info("데이터베이스 커밋 성공")
 
         return new_user
+
+    except HTTPException as e:
+        # HTTPException은 그대로 처리
+        raise e
+
     except Exception as e:
+        # 기타 에러 처리
         logger.error(f"회원가입 중 에러 발생: {str(e)}")
         db.rollback()
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="회원가입 중 오류가 발생했습니다.",
+        )
+
+
+# @router.post("/users/", response_model=UserRead)
+# def create_user(user: UserCreate, db: Session = Depends(get_db)):
+#     try:
+#         user.password = get_password_hash(user.password)
+#         new_user = UserService(db).create(user)
+#         db.commit()
+#         return new_user
+#     except Exception as e:
+#         db.rollback()
+#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/posts/", response_model=PostRead)
@@ -84,6 +110,7 @@ def create_post(
     except Exception as e:  # 그 외 예외는 400으로 처리
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
 
 @router.get("/posts/{post_id}", response_model=PostRead)
 def read_post(post_id: int, db: Session = Depends(get_db)):
@@ -173,19 +200,6 @@ def read_posts_by_user(
     user_id: int, skip: int = 0, limit: int = 10, db: Session = Depends(get_db)
 ):
     return PostService(db).get_by_author(user_id, skip=skip, limit=limit)
-
-
-# User Endpoints
-@router.post("/users/", response_model=UserRead)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    try:
-        user.password = get_password_hash(user.password)
-        new_user = UserService(db).create(user)
-        db.commit()
-        return new_user
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.get("/users/{user_id}", response_model=UserRead)
@@ -344,7 +358,10 @@ def read_comments_by_post(
 
 # 세션 기반 프로필 정보 확인
 @router.get("/profile")
-def get_user_profile(session_id: str = Cookie(None), session_store: DBSessionStore = Depends(get_session_store)):
+def get_user_profile(
+    session_id: str = Cookie(None),
+    session_store: DBSessionStore = Depends(get_session_store),
+):
     session_data = session_store.get_session(session_id)
 
     if not session_data:
@@ -395,9 +412,13 @@ def login_for_session(
             status_code=500, detail=f"Session creation failed: {str(e)}"
         )
 
-        session_id = session_store.create_session(session_data, expires_in=timedelta(days=1))
+        session_id = session_store.create_session(
+            session_data, expires_in=timedelta(days=1)
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Session creation failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Session creation failed: {str(e)}"
+        )
 
     # 세션 ID 쿠키로 설정 (secure=True는 HTTPS 환경에서만 전송)
     response.set_cookie(
@@ -405,7 +426,7 @@ def login_for_session(
         value=session_id,
         httponly=True,
         secure=False,  # 프로덕션 환경에서는 True로 설정할 것
-        samesite='Lax'  # CSRF 방지 설정
+        samesite="Lax",  # CSRF 방지 설정
     )
 
     # 세션 ID를 응답으로 반환
@@ -414,25 +435,31 @@ def login_for_session(
 
 @router.post("/logout")
 def logout(
-        response: Response,
-        userid: str,  # 로그아웃할 사용자의 userid를 입력받음
-        db: Session = Depends(get_db),
-        session_store=Depends(get_session_store)  # session_store 의존성 주입
+    response: Response,
+    userid: str,  # 로그아웃할 사용자의 userid를 입력받음
+    db: Session = Depends(get_db),
+    session_store=Depends(get_session_store),  # session_store 의존성 주입
 ):
     # 해당 사용자의 세션을 조회
-    session = db.query(SessionModel).filter(SessionModel.data.contains(f'"userid": "{userid}"')).first()
+    session = (
+        db.query(SessionModel)
+        .filter(SessionModel.data.contains(f'"userid": "{userid}"'))
+        .first()
+    )
 
     if not session:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No active session found for user: {userid}"
+            detail=f"No active session found for user: {userid}",
         )
 
     # 조회된 세션 삭제
     try:
         session_store.delete_session(session.session_id)  # 세션 삭제 메서드 호출
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Session deletion failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Session deletion failed: {str(e)}"
+        )
 
     # 세션 쿠키 제거
     response.delete_cookie(key="session_id")

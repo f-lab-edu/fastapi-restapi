@@ -1,11 +1,14 @@
 # conftest.py
 import os
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import sessionmaker
 from testcontainers.mysql import MySqlContainer
-from app.database import get_db, Base, get_engine
+
+from app.database import Base, get_db, get_engine
 from app.session_store import DBSessionStore, get_session_store  # DBSessionStore 임포트
+
 
 # `Testcontainers`를 사용하여 MySQL 컨테이너 생성
 @pytest.fixture(scope="session")
@@ -58,6 +61,7 @@ def mock_session_store(db_session):
 def app(db_engine):
     # FastAPI 애플리케이션 import는 환경 변수 설정 후에 해야 함
     from app.main import app  # 환경 변수 설정 후에 가져오기
+
     return app
 
 
