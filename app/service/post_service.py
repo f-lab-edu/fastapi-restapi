@@ -53,3 +53,14 @@ class PostService:
                 status_code=status.HTTP_404_NOT_FOUND, detail="게시글이 없습니다."
             )
         return post
+
+    def get_by_author(
+        self, author_id: str, skip: int = 0, limit: int = 10
+    ) -> List[Post]:
+        return (
+            self.db.query(Post)
+            .filter(Post.author_id == author_id)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )

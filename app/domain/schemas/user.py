@@ -2,7 +2,7 @@ import enum
 from datetime import datetime
 from typing import Optional
 
-from pydantic import UUID4, BaseModel, field_validator, ConfigDict
+from pydantic import UUID4, BaseModel, ConfigDict, field_validator
 
 
 class Role(str, enum.Enum):
@@ -59,6 +59,3 @@ class UserInDB(UserRead):
     hashed_password: str
 
     model_config = ConfigDict(from_attributes=True)
-
-
-
