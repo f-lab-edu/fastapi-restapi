@@ -1,11 +1,25 @@
 # conftest.py
 import os
+
 import pytest
+
+# conftest.py
+from dotenv import load_dotenv
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 from testcontainers.mysql import MySqlContainer
-from app.database import get_db, Base, get_engine
+
+from app.auth.dependencies import get_current_user
+from app.auth.utils import get_password_hash
+from app.config import Settings
+from app.database import Base, get_db, get_engine
+from app.domain.models.user import User
 from app.session_store import DBSessionStore, get_session_store  # DBSessionStore 임포트
+
+
+def pytest_configure():
+    load_dotenv(dotenv_path=".env.test")
+
 
 # `Testcontainers`를 사용하여 MySQL 컨테이너 생성
 @pytest.fixture(scope="session")
@@ -58,6 +72,7 @@ def mock_session_store(db_session):
 def app(db_engine):
     # FastAPI 애플리케이션 import는 환경 변수 설정 후에 해야 함
     from app.main import app  # 환경 변수 설정 후에 가져오기
+
     return app
 
 
@@ -80,3 +95,72 @@ def client(app, db_engine, mock_session_store):
     # 테스트 클라이언트 생성
     with TestClient(app) as c:
         yield c
+
+
+@pytest.fixture
+def unauthorized_user(db_session: Session):
+    # 인증되지 않은 사용자 객체 생성 (role을 제한적으로 설정)
+    user_data = {
+        "userid": "unauthuser",
+        "hashed_password": "fakehashedpassword",
+        "role": "MEMBER",  # 권한이 제한된 사용자
+        "nickname": "Unauthorized User",
+    }
+    user = User(**user_data)
+    db_session.add(user)
+    db_session.commit()
+    return user
+
+
+@pytest.fixture
+def authenticated_user(db_session):
+    """테스트용으로 인증된 사용자를 생성하는 fixture"""
+    test_user = User(
+        userid="testuser",
+        nickname="tester",
+        hashed_password="hashedpassword123",
+        role="MEMBER",
+    )
+    db_session.add(test_user)
+    db_session.commit()
+    return test_user
+
+
+def mock_get_current_user(authenticated_user):
+    def override_get_current_user():
+        return authenticated_user
+
+    return override_get_current_user
+
+
+# authenticated_user를 받아서 가짜 로그인 함수를 적용하는 fixture
+@pytest.fixture
+def set_mock_user(client, authenticated_user):
+    client.app.dependency_overrides[get_current_user] = mock_get_current_user(
+        authenticated_user
+    )
+
+
+@pytest.fixture
+def other_user(db_session: Session) -> User:
+    # 다른 사용자 생성
+    user_data = {
+        "userid": "otheruser123",
+        "hashed_password": get_password_hash("OtherPassword1234"),
+        "role": "MEMBER",
+        "nickname": "otheruser",
+    }
+    user = User(**user_data)
+    db_session.add(user)
+    db_session.commit()
+    return user
+
+
+@pytest.fixture
+def override_settings():
+    from app.config import get_settings
+
+    def get_test_settings():
+        return Settings(_env_file=".env.test")
+
+    app.dependency_overrides[get_settings] = get_test_settings
