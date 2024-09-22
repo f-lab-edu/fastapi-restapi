@@ -46,8 +46,9 @@ coverage.xml
 # 무시할 파일들
 app.db
 test.db
-
-
+.python-version
+.pre-commit-config.yaml
+.gitattributes
 # Ignore MySQL socket files
 mysql_data/*.sock
 
