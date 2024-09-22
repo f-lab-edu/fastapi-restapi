@@ -8,27 +8,24 @@ from app.domain.models.user import Role, User
 from app.domain.schemas.user import UserCreate, UserInDB, UserRead, UserUpdate
 
 
+class UserAlreadyExistsException(HTTPException):
+    def __init__(self):
+        super().__init__(status_code=409, detail="이미 존재하는 사용자 ID입니다.")
+
+
 class UserService:
-    def __init__(self, db: Session):
+    def __init__(self, db):
         self.db = db
 
     def create_user(self, user_create: UserCreate) -> UserRead:
-        # 먼저 중복된 userid가 있는지 확인
         existing_user = (
             self.db.query(User).filter(User.userid == user_create.userid).first()
         )
 
         if existing_user:
-            # 중복된 사용자 ID가 있을 경우 409 Conflict 에러 발생
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="이미 존재하는 사용자 ID입니다.",
-            )
+            raise UserAlreadyExistsException()
 
-        # 비밀번호 해시화
         hashed_password = get_password_hash(user_create.password)
-
-        # 사용자 생성 및 데이터베이스에 저장
         user = User(
             userid=user_create.userid,
             nickname=user_create.nickname,
@@ -66,15 +63,20 @@ class UserService:
         return [UserRead.from_orm(user) for user in users]
 
     def update(self, userid: str, user_update: UserUpdate) -> UserRead:
+        # 유저가 있는지 확인
         user = self.db.query(User).filter(User.userid == userid).first()
         if not user:
             raise ValueError("유저가 없습니다.")
         if user_update.password:
             user.hashed_password = get_password_hash(user_update.password)
-        for key, value in user_update.dict(exclude_unset=True).items():
+        update_data = user_update.dict(
+            exclude_unset=True, exclude={"password"}
+        )  # 'password' 필드 제외
+        for key, value in update_data.items():
             setattr(user, key, value)
         self.db.commit()
         self.db.refresh(user)
+
         return UserRead.from_orm(user)
 
     def delete(self, userid: str):

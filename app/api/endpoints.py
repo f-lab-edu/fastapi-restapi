@@ -9,24 +9,23 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import get_current_user
 from app.auth.utils import get_password_hash, verify_password
 from app.database import get_db
-from app.domain.models.user import User
 from app.domain.models.post import Post
 from app.domain.models.session import SessionModel
-from app.domain.models.user import Role
+from app.domain.models.user import Role, User
 from app.domain.schemas.comment import CommentCreate, CommentRead, CommentUpdate
 from app.domain.schemas.post import PostCreate, PostRead, PostUpdate
 from app.domain.schemas.user import UserCreate, UserInDB, UserRead, UserUpdate
 from app.service.comment_service import CommentService
 from app.service.post_service import PostService
-from app.service.user_service import UserService
+from app.service.user_service import UserAlreadyExistsException, UserService
 from app.session_store import DBSessionStore, get_session_store
 
 router = APIRouter()
 
 
 # 권한 체크 함수: 요청자가 본인인지 또는 관리자 권한을 가지고 있는지 확인
-def is_owner_or_admin(current_user: UserInDB, owner_id: int) -> bool:
-    return current_user.userid == owner_id or current_user.role == Role.ADMIN
+def is_owner_or_admin(current_user: UserInDB, user_id: str) -> bool:
+    return current_user.userid == user_id or current_user.role == Role.ADMIN
 
 
 # TODO: 로거 중복 코드 제거하기. 로거를 한군데서 관리하기
@@ -47,33 +46,21 @@ logger.addHandler(console_handler)
 
 
 @router.post("/users/", response_model=UserRead)
-def create_user(user: UserCreate, db: Session = Depends(get_db)): 
+def create_user(user: UserCreate, db: Session = Depends(get_db)) -> UserRead:
     try:
-        existing_user = db.query(User).filter(User.userid == user.userid).first()
-
-        if existing_user:
-            # 만약 중복된 사용자가 있다면 409 Conflict 에러 반환
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="이미 존재하는 사용자 ID 또는 닉네임입니다.",
-            )
-
-        # 유저 생성 서비스 호출
         user_service = UserService(db)
         new_user = user_service.create_user(user)
 
-        # 데이터베이스 커밋 후 로그 출력
         db.commit()
         logger.info("데이터베이스 커밋 성공")
 
         return new_user
 
-    except HTTPException as e:
-        # HTTPException은 그대로 처리
-        raise e
+    except UserAlreadyExistsException as e:
+        logger.warning(str(e.detail))
+        raise e  # 커스텀 예외는 그대로 발생
 
     except Exception as e:
-        # 기타 에러 처리
         logger.error(f"회원가입 중 에러 발생: {str(e)}")
         db.rollback()
         raise HTTPException(
@@ -197,22 +184,23 @@ def delete_post(
 
 @router.get("/users/{user_id}/posts", response_model=List[PostRead])
 def read_posts_by_user(
-    user_id: int, skip: int = 0, limit: int = 10, db: Session = Depends(get_db)
+    user_id: str, skip: int = 0, limit: int = 10, db: Session = Depends(get_db)
 ):
     return PostService(db).get_by_author(user_id, skip=skip, limit=limit)
 
 
-@router.get("/users/{user_id}", response_model=UserRead)
+@router.get("/users/{userid}", response_model=UserRead)
 def read_user(userid: str, db: Session = Depends(get_db)):
-    user = UserRead.from_orm(user_orm_instance)
+    print(f"Received userid: {userid}")
+    user = db.query(User).filter(User.userid == userid).first()
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="유저가 없습니다."
         )
-    return user
+    return UserRead.from_orm(user)
 
 
-@router.patch("/users/{user_id}", response_model=UserRead)
+@router.patch("/users/{userid}", response_model=UserRead)
 def update_user(
     userid: str,
     user: UserUpdate,
@@ -342,7 +330,7 @@ def delete_comment(
 
     try:
         comment_service.delete(comment_id)
-        db.commit()
+        db.commit()  # 삭제 후 커밋 확인
         return Response(status_code=status.HTTP_200_OK)
     except Exception as e:
         db.rollback()

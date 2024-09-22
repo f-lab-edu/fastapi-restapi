@@ -1,12 +1,8 @@
 from fastapi import FastAPI
 
 from app.api.endpoints import router
-from app.database import (
-    Base,
-    get_db,  # `engine` 대신 `get_engine`만 가져옴
-    get_engine,
-    lifespan,
-)
+from app.database import get_db  # `engine` 대신 `get_engine`만 가져옴
+from app.database import Base, get_engine, lifespan
 
 app = FastAPI(lifespan=lifespan)
 
