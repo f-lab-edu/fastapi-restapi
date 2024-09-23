@@ -6,6 +6,8 @@ from fastapi import FastAPI
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+from app.logger_setup import logger
+
 Base = declarative_base()
 
 
@@ -32,8 +34,8 @@ def get_db():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("애플리케이션이 시작되었습니다.")
+    logger.info("애플리케이션이 시작되었습니다.")
     try:
         yield
     finally:
-        print("애플리케이션이 종료되었습니다.")
+        logger.info("애플리케이션이 종료되었습니다.")

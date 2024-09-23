@@ -6,9 +6,8 @@ from fastapi import Depends
 from sqlalchemy.orm import Session  # Session 임포트
 
 from app.database import get_db  # DB 종속성 가져오기
-from app.domain.models.session import (
-    SessionModel,
-)  # SessionModel이 정의된 파일로부터 임포트
+from app.domain.models.session import \
+    SessionModel  # SessionModel이 정의된 파일로부터 임포트
 
 
 class DBSessionStore:

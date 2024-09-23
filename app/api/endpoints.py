@@ -1,4 +1,3 @@
-import logging
 from datetime import timedelta
 from typing import List
 
@@ -15,6 +14,7 @@ from app.domain.models.user import Role, User
 from app.domain.schemas.comment import CommentCreate, CommentRead, CommentUpdate
 from app.domain.schemas.post import PostCreate, PostRead, PostUpdate
 from app.domain.schemas.user import UserCreate, UserInDB, UserRead, UserUpdate
+from app.logger_setup import logger
 from app.service.comment_service import CommentService
 from app.service.post_service import PostService
 from app.service.user_service import UserAlreadyExistsException, UserService
@@ -30,19 +30,6 @@ def is_owner_or_admin(current_user: UserInDB, user_id: str) -> bool:
 
 # TODO: 로거 중복 코드 제거하기. 로거를 한군데서 관리하기
 # TODO: 로그 레벨, 포맷을 환경 변수로 주입받기
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)  # 로그 레벨 설정
-
-# 콘솔 출력 핸들러 생성
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
-
-# 로그 포맷터 생성
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-console_handler.setFormatter(formatter)
-
-# 로거에 핸들러 추가
-logger.addHandler(console_handler)
 
 
 @router.post("/users/", response_model=UserRead)
