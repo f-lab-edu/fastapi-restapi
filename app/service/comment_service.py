@@ -4,8 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.domain.models.comment import Comment
-from app.domain.schemas.comment import (CommentCreate, CommentRead,
-                                        CommentUpdate)
+from app.domain.schemas.comment import CommentCreate, CommentRead, CommentUpdate
 
 
 class CommentService:
@@ -35,8 +34,9 @@ class CommentService:
 
     def delete(self, comment_id: int):
         comment = self.db.query(Comment).filter(Comment.id == comment_id).first()
-        self.db.delete(comment)
-        self.db.commit()
+        if comment:
+            self.db.delete(comment)
+            self.db.commit()  # 반드시 커밋 호출
 
     def _get_comment_by_id(self, comment_id: int) -> Comment:
         comment = self.db.query(Comment).filter(Comment.id == comment_id).first()
