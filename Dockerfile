@@ -16,20 +16,19 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 ENV PATH="/root/.local/bin:$PATH"
 
 # 프로젝트의 의존성 파일을 복사
-COPY pyproject.toml poetry.lock /app/
+COPY pyproject.toml .
+COPY poetry.lock .
 
 # 프로젝트 의존성 설치
 RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi
 
-RUN pip install cryptography
-
-RUN pip install bcrypt==3.2.0
-
 # 애플리케이션 소스 코드를 복사
-COPY . /app
+COPY app /app
 
 # 포트 8000을 노출
 EXPOSE 8000
+
+ENV PYTHONPATH=/app
 
 # 애플리케이션 실행
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
