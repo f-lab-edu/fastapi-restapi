@@ -11,7 +11,8 @@ from app.database import get_db
 from app.domain.models.post import Post
 from app.domain.models.session import SessionModel
 from app.domain.models.user import Role, User
-from app.domain.schemas.comment import CommentCreate, CommentRead, CommentUpdate
+from app.domain.schemas.comment import (CommentCreate, CommentRead,
+                                        CommentUpdate)
 from app.domain.schemas.post import PostCreate, PostRead, PostUpdate
 from app.domain.schemas.user import UserCreate, UserInDB, UserRead, UserUpdate
 from app.logger_setup import logger

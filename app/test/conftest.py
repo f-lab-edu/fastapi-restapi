@@ -2,7 +2,6 @@
 import os
 
 import pytest
-
 # conftest.py
 from dotenv import load_dotenv
 from fastapi.testclient import TestClient
@@ -14,7 +13,8 @@ from app.auth.utils import get_password_hash
 from app.config import Settings
 from app.database import Base, get_db, get_engine
 from app.domain.models.user import User
-from app.session_store import DBSessionStore, get_session_store  # DBSessionStore 임포트
+from app.session_store import (DBSessionStore,  # DBSessionStore 임포트
+                               get_session_store)
 
 
 def pytest_configure():

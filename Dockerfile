@@ -1,9 +1,7 @@
-# TODO: 멀티 스테이징 빌드 적용하기
+# 첫 번째 스테이지: 빌드 스테이지 (Poetry 및 종속성 설치)
+FROM python:3.10-slim AS builder
 
-# 베이스 이미지로 Python 3.10 사용
-FROM python:3.10.0-slim
-
-# 작업 디렉터리를 설정
+# 작업 디렉터리 설정
 WORKDIR /app
 
 # 시스템 패키지 업데이트 및 필요한 종속성 설치
@@ -16,14 +14,23 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 ENV PATH="/root/.local/bin:$PATH"
 
 # 프로젝트의 의존성 파일을 복사
-COPY pyproject.toml .
-COPY poetry.lock .
+COPY pyproject.toml poetry.lock ./
 
-# 프로젝트 의존성 설치
-RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi
+# 의존성 설치 (프로덕션 환경에서 필요하지 않은 개발 의존성 제외)
+RUN poetry config virtualenvs.create false && poetry install --no-dev --no-interaction --no-ansi
 
-# 애플리케이션 소스 코드를 복사
-COPY app /app
+# 두 번째 스테이지: 실행 스테이지 (최종 프로덕션 이미지)
+FROM python:3.10-slim
+
+# 작업 디렉터리 설정
+WORKDIR /app
+
+# 첫 번째 스테이지에서 설치된 종속성을 복사 (불필요한 파일 제외)
+COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# 애플리케이션 소스 코드 복사
+COPY . /app
 
 # 포트 8000을 노출
 EXPOSE 8000
